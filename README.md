@@ -1,2 +1,2 @@
-# masterproject
-Second year Master's Project on cross-matching the Hipparcos and Gaia EDR3 catalogues
+# Hipparcos-Gaia Masters Project
+Second year Masters Project on cross-matching the Hipparcos and Gaia EDR3 catalogues
