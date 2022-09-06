@@ -1,0 +1,27 @@
+# NON-EXECUTABLE OVERVIEW OF ADQL QUERIES USED IN THE GAIA ARCHIVE
+
+
+# 1. Goal: Get all hipparcos data for the stars with a pre-computed xm
+# Result: Hipparcos data of 99,525 stars
+# Comment: Saved as hipp_marrese19_noxm
+
+SELECT hipp.*
+FROM public.hipparcos_newreduction as hipp
+JOIN gaiadr3.hipparcos2_best_neighbour as xmatch
+	ON xmatch.original_ext_source_id = hipp.hip
+
+
+# 2. Goal: Get all hipparcos data for the stars without a pre-computed xm
+# Result: Hipparcos data of 18,430 stars. 
+# Comment: Saved as hipp_marrese19_xm
+# Comment: LEFT JOIN first attempts to join all Hipparcos entries with best Gaia neighbour through id. 
+# Comment: If no match exists xmatch id is set to NULL, we select these.
+
+SELECT hipp.* 
+FROM public.hipparcos_newreduction as hipp 
+LEFT JOIN gaiadr3.hipparcos2_best_neighbour as xmatch 
+    ON hipp.hip = xmatch.original_ext_source_id 
+WHERE xmatch.original_ext_source_id IS NULL
+
+
+
