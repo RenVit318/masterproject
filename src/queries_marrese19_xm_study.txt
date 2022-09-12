@@ -5,10 +5,12 @@
 # Result: Hipparcos data of 99,525 stars
 # Comment: Saved as hipp_marrese19_noxm
 
-SELECT hipp.*
+SELECT hipp.*, oldhipp.btmag, oldhipp.vtmag
 FROM public.hipparcos_newreduction as hipp
 JOIN gaiadr3.hipparcos2_best_neighbour as xmatch
-	ON xmatch.original_ext_source_id = hipp.hip
+    ON xmatch.original_ext_source_id = hipp.hip
+JOIN public.hipparcos as oldhipp
+    ON oldhipp.hip = hipp.hip
 
 
 # 2. Goal: Get all hipparcos data for the stars without a pre-computed xm
@@ -17,10 +19,12 @@ JOIN gaiadr3.hipparcos2_best_neighbour as xmatch
 # Comment: LEFT JOIN first attempts to join all Hipparcos entries with best Gaia neighbour through id. 
 # Comment: If no match exists xmatch id is set to NULL, we select these.
 
-SELECT hipp.* 
-FROM public.hipparcos_newreduction as hipp 
-LEFT JOIN gaiadr3.hipparcos2_best_neighbour as xmatch 
-    ON hipp.hip = xmatch.original_ext_source_id 
+SELECT hipp.*, oldhipp.btmag, oldhipp.vtmag
+FROM public.hipparcos_newreduction as hipp
+LEFT JOIN gaiadr3.hipparcos2_best_neighbour as xmatch
+    ON hipp.hip = xmatch.original_ext_source_id
+JOIN public.hipparcos as oldhipp
+    ON oldhipp.hip = hipp.hip
 WHERE xmatch.original_ext_source_id IS NULL
 
 
