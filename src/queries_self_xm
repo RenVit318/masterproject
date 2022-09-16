@@ -1,0 +1,38 @@
+# NON-EXECUTABLE OVERVIEW OF ADQL QUERIES USED IN THE GAIA ARCHIVE
+
+# 1. Goal: Aggresively filter out low magnitude stars from Gaia to setup for XM
+# Result: Gaia Lite data of 3,087,821 stars
+# Comment: Saved as gaia_sel12
+
+SELECT *
+FROM gaiadr3.gaia_source_lite
+WHERE phot_g_mean_mag < 12
+
+# 2. Goal: Back-propagate the Gaia data (J2016.0) to the Hipp-epoch (J1991.25)
+# Result: Selected Gaia data + back propegated 6-dimensional vector for all 3e6 objects
+# Comment: Saved as ..
+# Comment: prop_vector is a 6-dim vector, attempted to save field seperately but did not work (see below)
+
+SELECT gaia12.source_id, gaia12.ra, gaia12.dec, gaia12.parallax, gaia12.pmra, gaia12.pmra_error,
+gaia12.pmdec, gaia12.pmdec_error, gaia12.phot_g_mean_mag, EPOCH_PROP(gaia12.ra, gaia12.dec,
+gaia12.parallax, gaia12.pmra, gaia12.pmdec, gaia12.radial_velocity, 2016.0, 1991.25) as prop_vector
+FROM user_rkievit.gaia_sel12 as gaia12
+
+
+# 2. Faulty query
+# Attempted to save both prop_vector, and its components as separate fields, but error message is
+# returned because it does not like '[' in the query? Therefore, the double select is required to
+# extract epoch_prop information
+
+SELECT array_element(a0,1) as ra_prop,
+       array_element(a0,2) as dec_prop,
+       array_element(a0,3) as parallax_prop,
+       array_element(a0,4) as pmra_prop,
+       array_element(a0,5) as pmdec_prop,
+       array_element(a0,6) as rv_prop
+FROM
+	(
+	SELECT source_id, ra, dec, parallax, pmra, pmra_error, pmdec, pmdec_error, phot_g_mean_mag, EPOCH_PROP(ra, dec, parallax, pmra, pmdec, radial_velocity, 2016.0, 1991.25) as a0
+	FROM user_rkievit.gaia_sel12
+	) as p
+
