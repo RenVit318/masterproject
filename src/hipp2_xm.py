@@ -6,14 +6,16 @@ Gaia.login(user=username)
 gaia_table_name = 'user_' + username + '.gaia_sel12_prop' # Adjusted Gaia3 table containing all objects with mag<12 and backpropagated to J1991.25
 #hipp_table_name = 'user_' + username + '.hipp_small' # Adjusted Hipparcos2 table selecting 150 random objects
 hipp_table_name = 'public.hipparcos_newreduction'
-xmatch_table_name = 'xm_hipp_gaia12_full'
+xmatch_table_name = 'xm_hipp_gaia12'
 search_radius = 1.0 #arcsecond
+
+num_batches = 8 # Should result in ~1.4h processing time
 
 query = "SELECT hipp.hip, gaia.source_id, DISTANCE(\
          POINT(hipp.ra, hipp.dec),\
          POINT(gaia.ra_prop, gaia.dec_prop)) * 3600. AS dist_arcsec\
-         FROM user_rkievit.gaia_sel12_prop AS gaia\
-         JOIN public.hipparcos_newreduction AS hipp\
+         FROM user_rkievit.hipp_med AS hipp\
+         JOIN user_rkievit.gaia_sel12_prop AS gaia\
          ON 1 = CONTAINS(\
            POINT(hipp.ra, hipp.dec),\
            CIRCLE(gaia.ra_prop, gaia.dec_prop, 1. / 3600.) )"
