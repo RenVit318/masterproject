@@ -1,5 +1,10 @@
 import numpy as np
 
+def sind(x):
+    return np.sin(np.radians(x))
+def cosd(x):
+    return np.cos(np.radians(x))
+
 def angular_distance(ra_a, dec_a, ra_b, dec_b, nu, unit='radians', nu_thresh=1e-3):
     """Calculates the angular distance between point A and point B without any assumptions
     For the equation, and its derivation see https://en.wikipedia.org/wiki/Angular_distance#General_case

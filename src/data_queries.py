@@ -1,7 +1,15 @@
 from astroquery.gaia import Gaia
+import threading
 
 def gaia_login(user='rkievit', password=""):
     Gaia.login(user=user)
+
+def launch_job(query):
+    job = Gaia.launch_job_async(query=query)
+    return job
+
+def get_data(job):
+    return job.get_results()
 
 def read_gaia_hipp_data(gaia_path, hipp_path,
                         num_hipp='all',
@@ -22,7 +30,8 @@ def query_gaia_simple_conesearch(mag_lim=None,
                                  epoch_1=1991.25, epoch_2=2016.0,
                                  apply_frame_rot=False,
                                  **kwargs):
-    """Queries Gaia IDs, RA and Dec (back-propagated) for a simple cone search cross-match"""
+    """Queries Gaia IDs, RA and Dec (back-propagated) for a simple cone search cross-match
+    NOTE: propagation takes a long time ~90m for 3e6 sources, after preprocess can do everything locally."""
     query = ""
     query = query + f"SELECT source_id, ra, dec, parallax, pmra, pmra_error, pmdec, pmdec_error, phot_g_mean_mag "
     if back_prop_gaia:
@@ -45,11 +54,12 @@ def query_gaia_simple_conesearch(mag_lim=None,
     if back_prop_gaia:
         query = query + ') as p'
 
-    print(query)
+    job = launch_job(query)
+    return get_data(job)
 
-    job = Gaia.launch_job_async(query=query)
 
-    return job.get_results()
+def query_gaia_preprocess(mag_lim):
+    
 
 
 def main():
