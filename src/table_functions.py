@@ -1,5 +1,6 @@
 import copy
-import numpy as np 
+import numpy as np
+
 
 def extract_sky_positions(tab):
     """Extract RA and Dec arrays from labeled tables. Note, names must currently be ra and dec"""
@@ -9,9 +10,9 @@ def extract_sky_positions(tab):
 
 
 def extract_proper_motions(tab):
-    """Extract pmra and pmde arrays from labeled tables. Note, names currently must be pmra and pmde"""
+    """Extract pmra and pmde arrays from labeled tables. Note, names currently must be pmra and pmdec"""
     pmra = tab['pmra']
-    pmde = tab['pmde']
+    pmde = tab['pmdec']
     return pmra, pmde
 
 
@@ -28,27 +29,40 @@ def convert_to_ids(xm_table, tab_g, tab_h):
 
 def batch_table(table, num_batches=None, batch_size=None):
     """Split a table up in to either a number of chunks, or a max. chunk size"""
-    idxs = np.arange(len(tab))
+    idxs = np.arange(len(table))
     if num_batches is not None and batch_size is not None:
         raise NotImplementedError("Please provide either only num_batches or batch_size")
     elif num_batches is not None:
-        batches_idxs = np.split(idxs, num_batches)
-    elif batch_size is not None
-        num_batches = np.ceil(table.shape[0]/batch_size)
-        batches_idxs = np.split(idxs, num_batches)
+        batches_idxs = np.array_split(idxs, int(num_batches))
+    elif batch_size is not None:
+        num_batches = int(np.ceil(len(table)/batch_size))
+        batches_idxs = np.array_split(idxs, num_batches)
     else:
         raise ValueError("Please provide either num_batches or batch_size")
-
+    print(batches_idxs)
     batches = []
     for idxs in batches_idxs:
-        batches.append(table[idxs])    
-
+        print(idxs)
+        print(table[idxs])
+        batches.append(table[idxs])   # Not the most efficient, but works
+    print(batches)
     return batches
         
 
-def combine_tables(batches):
-    """Combine a list of tables back into one full table"""
-    pass
+def read_tables(table_path, multiple=False):
+    """Either read in a single table, or read all tables following a 'ls'-like search, with * and ?"""
+    from astropy.table import Table
+    import glob
+
+    if not multiple:
+        return Table.read(table_path)
+    elif multiple:
+        all_table_paths = glob.glob(table_path)
+        all_tables = []
+        for t_path in all_table_paths:
+            t = Table.read(t_path)
+            all_tables.append(t)
+        return all_tables
 
 
 def main():
