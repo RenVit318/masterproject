@@ -2,7 +2,7 @@ from astroquery.gaia import Gaia
 import time
 
 
-def gaia_login(user='rkievit', password=""):
+def gaia_login(user='rkievit', password="Gaia3-Hipp2"):
     Gaia.login(user=user)#, password='')
 
 
