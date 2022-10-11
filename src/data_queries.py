@@ -3,7 +3,7 @@ import time
 
 
 def gaia_login(user='rkievit', password="Gaia3-Hipp2"):
-    Gaia.login(user=user)#, password='')
+    Gaia.login(user=user, password=password)
 
 
 def launch_job(query):
