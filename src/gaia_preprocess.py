@@ -61,9 +61,10 @@ def full_preprocess(mag_lim, gaia_epoch, hipp_epoch, batch_size=None, read_local
     4. Apply backpropagation in the archive
     5. Create complete table"""
 
+    gaia_login()
     t0 = time.time()
     print(f"Starting Gaia Data Preprocessing with M_lim = {mag_lim}..")
-
+    
     # 1.
     if not read_local:
         all_gaia_maglim = query_gaia_preprocess(mag_lim)
