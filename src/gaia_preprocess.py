@@ -61,8 +61,6 @@ def full_preprocess(mag_lim, gaia_epoch, hipp_epoch, batch_size=None, read_local
     4. Apply backpropagation in the archive
     5. Create complete table"""
 
-    gaia_login()
-
     t0 = time.time()
     print(f"Starting Gaia Data Preprocessing with M_lim = {mag_lim}..")
 
@@ -95,6 +93,7 @@ def full_preprocess(mag_lim, gaia_epoch, hipp_epoch, batch_size=None, read_local
     del all_gaia_maglim
 
     # 4.
+    gaia_login() # Do this as late as possible to make sure it does not expire
     propagate_batches_error(gaia_batches, gaia_epoch, hipp_epoch)
     t3 = time.time()
     print(f"All Gaia data propagated and saved. Propagation time taken: {t3 - t2:.2f}s")
