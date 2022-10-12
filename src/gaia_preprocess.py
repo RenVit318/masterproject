@@ -87,9 +87,9 @@ def full_preprocess(mag_lim, gaia_epoch, hipp_epoch, batch_size=None, read_local
     print(f"Proper Motion Correction Applied. Time elapsed {t2 - t1:.2f}s")
 
     # 3.
-    print(all_gaia_maglim)
+    #print(all_gaia_maglim)
     gaia_batches = batch_table(all_gaia_maglim, batch_size=batch_size)
-    print(gaia_batches)
+    #print(gaia_batches)
     print(f"Gaia data batched into {len(gaia_batches)} separate batches\n"
           f"Starting data propagation..")
     del all_gaia_maglim
@@ -101,9 +101,9 @@ def full_preprocess(mag_lim, gaia_epoch, hipp_epoch, batch_size=None, read_local
     del gaia_batches
 
     # 5.
-    gaia_batches_prop = read_tables(table_path='../results/gaia_astrometric_batch=*', multiple=True)
+    gaia_batches_prop = read_tables(table_path='../results/gaia_astrometric_batch_*', multiple=True)
     gaia_tab_prop = vstack(gaia_batches_prop)  # astropy.table function. Should arrange everything automatically
-    gaia_tab_prop.write('../results/GaiaBaseCat', format='fits')
+    gaia_tab_prop.write('../results/GaiaBaseCat.', format='fits')
     print(f"Completed. Total runtime: {time.time() - t0:.2f}s")
 
 
@@ -111,7 +111,7 @@ def main():
     mag_lim = 4  # determined with H-G relations
     gaia_epoch = 2016.0
     hipp_epoch = 1991.25
-    batch_size = 1e5 
+    batch_size = 100 # Note: Code currently does not work if only one batch is made
     read_local = False
     data_path = '../../data/gaia_process_maglim14.vot'
 

@@ -1,4 +1,5 @@
 from astroquery.gaia import Gaia
+from astropy.io import fits
 import time
 
 
@@ -83,25 +84,28 @@ def propagate_batches_error(batches, epoch1, epoch2, num_runs=2):
 
     # Split the table up into two parts, because it is still just too big to all be saved as user tables.
     # Also adds better usability if we ever want to scale up the preprocessing
+    # Meta batches might not be the best name, but it's a batch of batches.
     if num_runs == 1:
         meta_batches = batches
     elif num_runs == 2:
         middle_idx = int(len(batches) // 2)
-        meta_batches = [[batches[:middle_idx]], [batches[:middle_idx]]]
+        meta_batches = [batches[:middle_idx], batches[:middle_idx]]
     elif num_runs > 2:
         raise NotImplementedError("Currently cannot cut a list of tables into more than 2 meta batches.")
 
-    print(meta_batches)
-
+    #print(meta_batches)
+    counter = 0
     for batches in meta_batches:
-        for i, batch in enumerate(batches):
-            print(batch)
-            batch_name = f'gaia_astrometric_batch={i}'
+        i = counter
+        for batch in batches:
+            #print(batch)
+            batch_name = f'gaia_astrometric_batch_{i}'
             Gaia.upload_table(upload_resource=batch,
                               table_name=batch_name)  # rkievit user space is increased to 2GB, full dataset is ~1.9GB
             # The threading module won't wait untill the archive job is completed, but instead will send all batches
             # at the same time through propagate_error_one, which saves all tables in ../results/
-            threading.Tread(target=propagate_error_one, args=(batch_name, epoch1, epoch2,)).start()
+            threading.Thread(target=propagate_error_one, args=(batch_name, epoch1, epoch2,)).start()
+            i += 1  # track batch index through all meta batches
 
         all_threads_done = False
         while not all_threads_done:
@@ -109,16 +113,17 @@ def propagate_batches_error(batches, epoch1, epoch2, num_runs=2):
             if threading.active_count() == num_threads_passive:
                 print(f"Still processing, number of active cores: {threading.active_count()}", end='\r')
                 all_threads_done = True  # Finish the while loop once all tables are saved
-
-        for i in range(len(batches)):
-            batch_name = f'gaia_astrometric_batch={i}'
+        i = counter
+        for _ in range(len(batches)):
+            batch_name = f'gaia_astrometric_batch_{i}'
             Gaia.delete_user_table(batch_name)
+            i += 1
+        counter = i  # make sure we continue counting such that there's no overlap
 
 
 def propagate_error_one(table_name, epoch1, epoch2, save_path='../results'):
     """Query position and error propagation of user table, and save resulting table into a file"""
     query = f"""SELECT  source_id, ra, dec, pmra, pmdec, parallax,
-                        array_length(a0, 1) as array_dim,
                         array_element(a0, 1) as ra_prop,
                         array_element(a0, 2) as dec_prop,
                         array_element(a0, 3) as parallax_prop,
@@ -142,7 +147,7 @@ def propagate_error_one(table_name, epoch1, epoch2, save_path='../results'):
                     ) as p"""
     job = launch_job(query)
     tab = get_data(job)
-    tab.write('../results/'+table_name, type='fits')
+    tab.write('../results/'+table_name+'.fits', format='fits')
 
 
 def main():

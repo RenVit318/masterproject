@@ -39,13 +39,13 @@ def batch_table(table, num_batches=None, batch_size=None):
         batches_idxs = np.array_split(idxs, num_batches)
     else:
         raise ValueError("Please provide either num_batches or batch_size")
-    print(batches_idxs)
+    #print(batches_idxs)
     batches = []
     for idxs in batches_idxs:
-        print(idxs)
-        print(table[idxs])
+        #print(idxs)
+        #print(table[idxs])
         batches.append(table[idxs])   # Not the most efficient, but works
-    print(batches)
+    #print(batches)
     return batches
         
 
