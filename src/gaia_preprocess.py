@@ -78,10 +78,10 @@ def full_preprocess(mag_lim, gaia_epoch, hipp_epoch, batch_size=None, read_local
     ra, dec = extract_sky_positions(all_gaia_maglim)
     pmra, pmde = extract_proper_motions(all_gaia_maglim)
 
-    pmra_corr, pmde_corr = edr3ToICRF(pmra, pmde, ra, dec, all_gaia_maglim['phot_g_mean_mag'])
+    #pmra_corr, pmde_corr = edr3ToICRF(pmra, pmde, ra, dec, all_gaia_maglim['phot_g_mean_mag'])
 
-    all_gaia_maglim['pmra'] = pmra_corr
-    all_gaia_maglim['pmde'] = pmde_corr
+    #all_gaia_maglim['pmra'] = pmra_corr
+    #all_gaia_maglim['pmde'] = pmde_corr
     t2 = time.time()
     print(f"Proper Motion Correction Applied. Time elapsed {t2 - t1:.2f}s")
 
@@ -103,7 +103,7 @@ def full_preprocess(mag_lim, gaia_epoch, hipp_epoch, batch_size=None, read_local
     # 5.
     gaia_batches_prop = read_tables(table_path='../results/gaia_astrometric_batch_*', multiple=True)
     gaia_tab_prop = vstack(gaia_batches_prop)  # astropy.table function. Should arrange everything automatically
-    gaia_tab_prop.write('../results/GaiaBaseCat.fits', format='fits')
+    gaia_tab_prop.write('../../results/GaiaBaseCat_SIMPLE.fits', format='fits')
     print(f"Completed. Total runtime: {time.time() - t0:.2f}s")
 
 

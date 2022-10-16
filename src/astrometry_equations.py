@@ -35,6 +35,14 @@ def angular_distance(ra_a, dec_a, ra_b, dec_b, nu, unit='radians', nu_thresh=1e-
 
     return theta
 
+# TODO: Fill these out
+def predict_mg_bv(hp_mag, b_v):
+    pass
+
+def predict_mg_vi(hp_mag, v_i):
+    pass
+
+
 
 
 
