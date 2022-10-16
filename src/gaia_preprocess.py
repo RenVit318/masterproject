@@ -44,7 +44,8 @@ def edr3ToICRF(pmra, pmde, ra, dec, G):
             omegaY = table1[3][(Gmin <= G[i]) & (Gmax > G[i])][0]
             omegaZ = table1[4][(Gmin <= G[i]) & (Gmax > G[i])][0]
 
-            pmraCorr = -1 * sind(dec[i]) * cosd(ra[i]) * omegaX - sind(dec[i]) * sind(ra[i]) * omegaY + cosd(dec[i]) * omegaZ
+            pmraCorr = -1 * sind(dec[i]) * cosd(ra[i]) * omegaX - sind(dec[i]) * sind(ra[i]) * omegaY + cosd(
+                dec[i]) * omegaZ
             pmdecCorr = sind(ra[i]) * omegaX - cosd(ra[i]) * omegaY
 
             corrected_pmra[i] = pmra[i] - pmraCorr / 1000.
@@ -52,71 +53,106 @@ def edr3ToICRF(pmra, pmde, ra, dec, G):
     return corrected_pmra, corrected_pmde
 
 
-def full_preprocess(mag_lim, gaia_epoch, hipp_epoch, batch_size=None, read_local=False, data_path=None):
+def error_inflation(table, inflated_errors_array=['ra_error, dec_error, parallax_error, pmra_error, pmdec_error'],
+                    inflation_type='Brandt21'):
+    """Inflate the Gaia errors according to methods prescribed in one of multiple papers"""
+
+    if inflation_type == 'Brandt21':
+        inflation_value = 1.37  # Brandt 2021
+        for val in inflated_errors_array:
+            table[val] = table[val] * inflation_value
+    else:
+        raise ValueError("This inflation method is not known or not yet implemented.")
+
+    return table
+
+
+def full_preprocess(mag_lim, gaia_epoch, hipp_epoch, batch_size=None, read_local=False, data_path=None,
+                    apply_pm_corr=False, error_inflation_type=None,
+                    savename='GaiaCat_noname'):
     """Completely preprocess the Gaia data from the Archive, into something usable for 
     crossmatching with Hipparcos
     1. Extract all proper Gaia data with M<mag_lim
     2. Apply PM correction (Cantat-Gaudin & Brandt 2021)
+    3. Apply Error Inflation (Brandt 2021, ..)
     3. Batch data for processing speed
     4. Apply backpropagation in the archive
     5. Create complete table"""
 
     gaia_login()
-    t0 = time.time()
+    t1 = time.time()
     print(f"Starting Gaia Data Preprocessing with M_lim = {mag_lim}..")
-    
+
     # 1.
     if not read_local:
         all_gaia_maglim = query_gaia_preprocess(mag_lim)
     else:
-        all_gaia_maglim = Table.read(data_path) # Reading full data takes ~1h, way too long just download it.
-    t1 = time.time()
-    print(f"Gaia Archival Data imported. Time elapsed {t1 - t0:.2f}s \n "
+        all_gaia_maglim = Table.read(data_path)  # Reading full data takes ~1h, way too long just download it.
+    print(f"Gaia Archival Data imported. Time elapsed {time.time() - t1:.2f}s \n "
           f"Total Gaia objects: {int(len(all_gaia_maglim))}")
 
     # 2.
-    ra, dec = extract_sky_positions(all_gaia_maglim)
-    pmra, pmde = extract_proper_motions(all_gaia_maglim)
-
-    #pmra_corr, pmde_corr = edr3ToICRF(pmra, pmde, ra, dec, all_gaia_maglim['phot_g_mean_mag'])
-
-    #all_gaia_maglim['pmra'] = pmra_corr
-    #all_gaia_maglim['pmde'] = pmde_corr
     t2 = time.time()
-    print(f"Proper Motion Correction Applied. Time elapsed {t2 - t1:.2f}s")
+    if apply_pm_corr:
+        ra, dec = extract_sky_positions(all_gaia_maglim)
+        pmra, pmde = extract_proper_motions(all_gaia_maglim)
+
+        pmra_corr, pmde_corr = edr3ToICRF(pmra, pmde, ra, dec, all_gaia_maglim['phot_g_mean_mag'])
+
+        all_gaia_maglim['pmra'] = pmra_corr
+        all_gaia_maglim['pmde'] = pmde_corr
+        print(f"Proper Motion Correction Applied. Time elapsed {time.time() - t2:.2f}s")
 
     # 3.
-    #print(all_gaia_maglim)
+    t3 = time.time()
+    if error_inflation_type is not None:
+        all_gaia_maglim = error_inflation(all_gaia_maglim, inflation_type=error_inflation_type)
+        print(f"Error Inflation with Method {error_inflation_type} Applied. Time elapsed {time.time() - t3:.2f}s")
+
+    # 4.
     gaia_batches = batch_table(all_gaia_maglim, batch_size=batch_size)
-    #print(gaia_batches)
+
     print(f"Gaia data batched into {len(gaia_batches)} separate batches\n"
           f"Starting data propagation..")
     del all_gaia_maglim
 
-    # 4.
-    gaia_login() # Do this as late as possible to make sure it does not expire
+    # 5.
+    t5 = time.time()
+    gaia_login()  # Do this as late as possible to make sure it does not expire
     propagate_batches_error(gaia_batches, gaia_epoch, hipp_epoch)
-    t3 = time.time()
-    print(f"All Gaia data propagated and saved. Propagation time taken: {t3 - t2:.2f}s")
+    print(f"All Gaia data propagated and saved. Propagation time taken: {time.time() - t5:.2f}s")
     del gaia_batches
 
-    # 5.
+    # 6.
     gaia_batches_prop = read_tables(table_path='../results/gaia_astrometric_batch_*', multiple=True)
     gaia_tab_prop = vstack(gaia_batches_prop)  # astropy.table function. Should arrange everything automatically
     gaia_tab_prop.write('../../results/GaiaBaseCat_SIMPLE.fits', format='fits')
-    print(f"Completed. Total runtime: {time.time() - t0:.2f}s")
+    print(f"Completed. Total runtime: {time.time() - t1:.2f}s")
 
 
 def main():
     mag_lim = 14  # determined with H-G relations
     gaia_epoch = 2016.0
     hipp_epoch = 1991.25
-    batch_size = int(1e5) # Note: Code currently does not work if only one batch is made
+    batch_size = int(1e5)  # Note: Code currently does not work if only one batch is made
     read_local = False
+
+    # Tunable params:
+    apply_pm_corr = True
+    error_inflation_type = 'Brandt21'
+
+    # Make name
+    savename = "GaiaBaseCat"
+    if apply_pm_corr:
+        savename += "+PMC"  # Proper Motion Correction
+    if error_inflation_type == 'Brandt21':
+        savename += "+EIB"  # Error Inflation Brandt
+
     data_path = '../../data/gaia_process_maglim14.vot'
 
-    full_preprocess(mag_lim, gaia_epoch, hipp_epoch, batch_size, read_local, data_path)
-
+    full_preprocess(mag_lim, gaia_epoch, hipp_epoch, batch_size=batch_size, read_local=read_local, data_path=data_path,
+                    apply_pm_corr=apply_pm_corr, error_inflation_type=error_inflation_type,
+                    savename=savename)
 
 if __name__ == '__main__':
     main()
