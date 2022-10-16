@@ -147,7 +147,7 @@ def propagate_error_one(table_name, epoch1, epoch2, save_path='../results'):
                     ) as p"""
     job = launch_job(query)
     tab = get_data(job)
-    tab.write('../results/'+table_name+'.fits', format='fits')
+    tab.write('../../results/'+table_name+'.fits', format='fits', overwrite=True)
 
 
 def main():

@@ -53,13 +53,14 @@ def edr3ToICRF(pmra, pmde, ra, dec, G):
     return corrected_pmra, corrected_pmde
 
 
-def error_inflation(table, inflated_errors_array=['ra_error, dec_error, parallax_error, pmra_error, pmdec_error'],
+def error_inflation(table, inflated_errors_array=['ra_error', 'dec_error', 'parallax_error', 'pmra_error', 'pmdec_error'],
                     inflation_type='Brandt21'):
     """Inflate the Gaia errors according to methods prescribed in one of multiple papers"""
 
     if inflation_type == 'Brandt21':
         inflation_value = 1.37  # Brandt 2021
         for val in inflated_errors_array:
+            print(val)
             table[val] = table[val] * inflation_value
     else:
         raise ValueError("This inflation method is not known or not yet implemented.")
@@ -88,7 +89,7 @@ def full_preprocess(mag_lim, gaia_epoch, hipp_epoch, batch_size=None, read_local
         all_gaia_maglim = query_gaia_preprocess(mag_lim)
     else:
         all_gaia_maglim = Table.read(data_path)  # Reading full data takes ~1h, way too long just download it.
-    print(f"Gaia Archival Data imported. Time elapsed {time.time() - t1:.2f}s \n "
+    print(f"Gaia Archival Data imported. Time elapsed {time.time() - t1:.0f}s \n "
           f"Total Gaia objects: {int(len(all_gaia_maglim))}")
 
     # 2.
@@ -101,13 +102,13 @@ def full_preprocess(mag_lim, gaia_epoch, hipp_epoch, batch_size=None, read_local
 
         all_gaia_maglim['pmra'] = pmra_corr
         all_gaia_maglim['pmde'] = pmde_corr
-        print(f"Proper Motion Correction Applied. Time elapsed {time.time() - t2:.2f}s")
+        print(f"Proper Motion Correction Applied. Time elapsed {time.time() - t2:.0f}s")
 
     # 3.
     t3 = time.time()
     if error_inflation_type is not None:
         all_gaia_maglim = error_inflation(all_gaia_maglim, inflation_type=error_inflation_type)
-        print(f"Error Inflation with Method {error_inflation_type} Applied. Time elapsed {time.time() - t3:.2f}s")
+        print(f"Error Inflation with Method {error_inflation_type} Applied. Time elapsed {time.time() - t3:.0f}s")
 
     # 4.
     gaia_batches = batch_table(all_gaia_maglim, batch_size=batch_size)
@@ -120,14 +121,28 @@ def full_preprocess(mag_lim, gaia_epoch, hipp_epoch, batch_size=None, read_local
     t5 = time.time()
     gaia_login()  # Do this as late as possible to make sure it does not expire
     propagate_batches_error(gaia_batches, gaia_epoch, hipp_epoch)
-    print(f"All Gaia data propagated and saved. Propagation time taken: {time.time() - t5:.2f}s")
+    print(f"All Gaia data propagated and saved. Propagation time taken: {time.time() - t5:.0f}s")
     del gaia_batches
 
     # 6.
-    gaia_batches_prop = read_tables(table_path='../results/gaia_astrometric_batch_*', multiple=True)
+    gaia_batches_prop = read_tables(table_path='../../results/gaia_astrometric_batch_*', multiple=True)
     gaia_tab_prop = vstack(gaia_batches_prop)  # astropy.table function. Should arrange everything automatically
-    gaia_tab_prop.write('../../results/GaiaBaseCat_SIMPLE.fits', format='fits')
-    print(f"Completed. Total runtime: {time.time() - t1:.2f}s")
+
+    # Add in this error catcher in case the file already exists to ensure both no runtime is lost, and old
+    # catalogues are not automatically deleted
+    try:
+        gaia_tab_prop.write('../../results/'+savename+'.fits', format='fits')
+    except OSError:
+        saved = False
+        while not saved:
+            print(f"Cannot write file {savename}.fits into ../../results/. Please insert different name:")
+            savename = input()
+            try:
+                gaia_tab_prop.write('../../results/' + savename + '.fits', format='fits')
+            except OSError:
+                continue
+            saved = True # If no error it should call this
+    print(f"Completed. Total runtime: {time.time() - t1:.0f}s")
 
 
 def main():
