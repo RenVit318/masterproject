@@ -2,7 +2,7 @@ import numpy as np
 from astropy.table import Table, vstack
 from astrometry_equations import sind, cosd
 from table_functions import extract_sky_positions, extract_proper_motions, batch_table, read_tables
-from data_queries import gaia_login, query_gaia_preprocess, propagate_batches_error
+from data_queries import gaia_login, query_gaia_preprocess, propagate_batches_error, delete_unlabeled_jobs
 import time
 
 
@@ -163,6 +163,7 @@ def make_all_catalogues(mag_lim, gaia_epoch, hipp_epoch, batch_size, read_local,
             full_preprocess(mag_lim, gaia_epoch, hipp_epoch, batch_size=batch_size, read_local=read_local, data_path=data_path,
                             apply_pm_corr=apply_pm_corr, error_inflation_type=error_inflation_type,
                             savename=savename)
+            delete_unlabeled_jobs()
 
 
 def main():

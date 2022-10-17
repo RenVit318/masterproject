@@ -16,6 +16,26 @@ def get_data(job):
     return job.get_results()
 
 
+def delete_unlabeled_jobs():
+    """ Deletes all jobs in user directory!!!
+    BELOW IS CURRENTLY UNTRUE. HOW TO FIX THIS??
+    Delete all jobs that weren't given a specific name. Takes on two assumptions:
+    1. The job name string is exactly 14 characters long
+    2. The job name ends with the letter 'O'
+    Note that: therefore, if any given job name has these characters, it is deleted."""
+    gaia_login() # Just make sure we're logged in
+    jobs = Gaia.list_async_jobs()
+    jobs_to_remove = []
+
+    for job in jobs:
+        print(job)
+        if job.jobid.endswith('O') and len(job.jobid) == 14:
+            jobs_to_remove.append(job.jobid)
+            Gaia.remove_jobs(job.jobid)
+    #    else:
+    #        print(f"Job not removed: {job.jobid}")
+    Gaia.remove_jobs(jobs_to_remove)
+
 def read_gaia_hipp_data(gaia_path, hipp_path,
                         num_hipp='all',
                         **kwargs):
@@ -151,13 +171,12 @@ def propagate_error_one(table_name, epoch1, epoch2, save_path='../results'):
 
 
 def main():
-    gaia_login()
-    table = query_gaia_simple_conesearch(back_prop_gaia=True, mag_lim=5)
-    return table
+    #gaia_login()
+    #table = query_gaia_simple_conesearch(back_prop_gaia=True, mag_lim=5)
+    #return table
+    delete_unlabeled_jobs()
 
 
 if __name__ == '__main__':
-    # main()
-    import threading
+    main()
 
-    print(threading.active_count())
