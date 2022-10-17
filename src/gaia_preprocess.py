@@ -50,6 +50,8 @@ def edr3ToICRF(pmra, pmde, ra, dec, G):
 
             corrected_pmra[i] = pmra[i] - pmraCorr / 1000.
             corrected_pmde[i] = pmde[i] - pmdecCorr / 1000.
+        print(f"PM Corr: {i+1/pmra.shape[0]}", end='/r')
+        
     return corrected_pmra, corrected_pmde
 
 
@@ -60,7 +62,6 @@ def error_inflation(table, inflated_errors_array=['ra_error', 'dec_error', 'para
     if inflation_type == 'Brandt21':
         inflation_value = 1.37  # Brandt 2021
         for val in inflated_errors_array:
-            print(val)
             table[val] = table[val] * inflation_value
     else:
         raise ValueError("This inflation method is not known or not yet implemented.")
@@ -145,29 +146,36 @@ def full_preprocess(mag_lim, gaia_epoch, hipp_epoch, batch_size=None, read_local
     print(f"Completed. Total runtime: {time.time() - t1:.0f}s")
 
 
+def make_all_catalogues(mag_lim, gaia_epoch, hipp_epoch, batch_size, read_local, data_path):
+    """Given a certain set of standard values, iterates over all tunable variables"""
+
+    for apply_pm_corr in [True, False]:
+        for error_inflation_type in [None, 'Brandt21']:
+            # Make name
+            savename = "GaiaBaseCat"
+            if apply_pm_corr:
+                savename += "+PMC"  # Proper Motion Correction
+            if error_inflation_type == 'Brandt21':
+                savename += "+EIB"  # Error Inflation Brandt
+
+            print(f"Starting Gaia Preprocessing Into: {savename}")
+
+            full_preprocess(mag_lim, gaia_epoch, hipp_epoch, batch_size=batch_size, read_local=read_local, data_path=data_path,
+                            apply_pm_corr=apply_pm_corr, error_inflation_type=error_inflation_type,
+                            savename=savename)
+
+
 def main():
     mag_lim = 14  # determined with H-G relations
     gaia_epoch = 2016.0
     hipp_epoch = 1991.25
-    batch_size = int(1e5)  # Note: Code currently does not work if only one batch is made
-    read_local = False
-
-    # Tunable params:
-    apply_pm_corr = True
-    error_inflation_type = 'Brandt21'
-
-    # Make name
-    savename = "GaiaBaseCat"
-    if apply_pm_corr:
-        savename += "+PMC"  # Proper Motion Correction
-    if error_inflation_type == 'Brandt21':
-        savename += "+EIB"  # Error Inflation Brandt
+    batch_size = int(5e5)  # Note: Code currently does not work if only one batch is made
+    read_local = False # UvL Vdesk can't properly download the .vot file. Fix this once on location.
 
     data_path = '../../data/gaia_process_maglim14.vot'
 
-    full_preprocess(mag_lim, gaia_epoch, hipp_epoch, batch_size=batch_size, read_local=read_local, data_path=data_path,
-                    apply_pm_corr=apply_pm_corr, error_inflation_type=error_inflation_type,
-                    savename=savename)
+    make_all_catalogues(mag_lim, gaia_epoch, hipp_epoch, batch_size, read_local, data_path)
 
+    
 if __name__ == '__main__':
     main()
