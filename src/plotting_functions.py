@@ -16,7 +16,7 @@ def plot_star_square(table, center_coords, box_size,
     ra = table[ra_identifier]
     de = table[dec_identifier]
     size = box_size / 3600.  # box size in degrees
-    #star_idxs = #np.where((ra < ra_mid + size) and (ra > ra_mid - size) and (dec < de_mid + size) and (dec > de_mid - size))
+
     ra_lims = (ra<(ra_mid+size))*(ra>(ra_mid-size))
     de_lims = (de<(de_mid+size))*(de>(de_mid-size))
     star_mask = ra_lims*de_lims
@@ -28,7 +28,7 @@ def plot_star_square(table, center_coords, box_size,
     print(f"Stars selected - plotting {len(ra)} stars..")
 
     print(flux)
-    fig, ax = plt.subplots(1, 1, figsize=(8, 8))
+    fig, ax = plt.subplots(1, 1, figsize=(20, 20))
     ax.scatter(ra, de, s=3e3*flux, c='gold')
 
     ax.set_xlim(ra_mid-size, ra_mid+size)
@@ -44,7 +44,7 @@ def main():
     table = fits.open('../../data/gaia_stars_sel12_noerr.fits')[1].data
 
     center_coords = [82.5, -2]  # degrees
-    box_size = 3*3600  # arcseconds
+    box_size = 10*3600  # arcseconds
     plot_star_square(table, center_coords, box_size,
                      ra_identifier='ra_prop', dec_identifier='dec_prop')
 
