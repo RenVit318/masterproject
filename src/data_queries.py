@@ -1,3 +1,12 @@
+############################
+#
+# !!NOTE: THIS FILE CONTAINS AUTOMATED GAIA LOGIN, PLEASE CHANGE USER WHEN RUNNING THIS CODE!!
+#
+# All functions requiring communication with the Gaia Archive.
+# Data Queries, Job Removal, etc..
+#
+############################
+
 from astroquery.gaia import Gaia
 from astropy.io import fits
 import time
@@ -16,13 +25,24 @@ def get_data(job):
     return job.get_results()
 
 
-def delete_unlabeled_jobs():
+def delete_unlabeled_jobs(no_check=False):
     """ Deletes all jobs in user directory!!!
     BELOW IS CURRENTLY UNTRUE. HOW TO FIX THIS??
     Delete all jobs that weren't given a specific name. Takes on two assumptions:
     1. The job name string is exactly 14 characters long
     2. The job name ends with the letter 'O'
     Note that: therefore, if any given job name has these characters, it is deleted."""
+
+    if no_check: # Extra safety point
+        pass
+    else:
+        delete_check = input("Running this code means all Gaia jobs of logged in user will be deleted, continue?.. (y/n)")
+        if delete_check == 'y':
+            pass
+        else:
+            print("Understood. Not deleting jobs")
+            return
+
     gaia_login() # Just make sure we're logged in
     jobs = Gaia.list_async_jobs()
     jobs_to_remove = []
@@ -31,7 +51,7 @@ def delete_unlabeled_jobs():
         print(job)
         if job.jobid.endswith('O') and len(job.jobid) == 14:
             jobs_to_remove.append(job.jobid)
-            Gaia.remove_jobs(job.jobid)
+            #Gaia.remove_jobs(job.jobid)
     #    else:
     #        print(f"Job not removed: {job.jobid}")
     Gaia.remove_jobs(jobs_to_remove)
@@ -88,7 +108,7 @@ def query_gaia_preprocess(mag_lim):
     query = f""" SELECT source_id, ra, ra_error, dec, dec_error, parallax, parallax_error, pmra, pmra_error, pmdec, 
                        pmdec_error, radial_velocity, radial_velocity_error, ra_dec_corr, ra_parallax_corr, ra_pmra_corr,
                        ra_pmdec_corr, dec_parallax_corr, dec_pmra_corr, dec_pmdec_corr,	parallax_pmra_corr, 
-                       parallax_pmdec_corr, pmra_pmdec_corr, phot_g_mean_mag
+                       parallax_pmdec_corr, pmra_pmdec_corr, phot_g_mean_mag, bp_rp
 			    FROM gaiadr3.gaia_source 
 			    WHERE phot_g_mean_mag < {mag_lim} """
     job = launch_job(query)
@@ -109,7 +129,7 @@ def propagate_batches_error(batches, epoch1, epoch2, num_runs=2):
         meta_batches = batches
     elif num_runs == 2:
         middle_idx = int(len(batches) // 2)
-        meta_batches = [batches[:middle_idx], batches[:middle_idx]]
+        meta_batches = [batches[:middle_idx], batches[middle_idx:]]
     elif num_runs > 2:
         raise NotImplementedError("Currently cannot cut a list of tables into more than 2 meta batches.")
 
@@ -152,7 +172,8 @@ def propagate_error_one(table_name, epoch1, epoch2, save_path='../results'):
                         array_element(a0, 6) as rv_prop,
                         array_element(a1, 1) as e_ra_prop,
                         array_element(a1, 2) as e_de_prop,
-                        array_element(a1, 7)as ra_dec_prop
+                        array_element(a1, 7)as ra_dec_prop,
+                        phot_g_mean_mag, bp_rp
                 FROM (
                     SELECT  *,
                                 EPOCH_PROP(ra,dec,parallax,pmra,pmdec,radial_velocity,{epoch1},{epoch2}) as a0,

@@ -14,7 +14,7 @@ import copy
 from data_queries import read_gaia_hipp_data
 
 
-@njit  # numba wrapper to improve processing speed by factor ~5
+@njit()  # numba wrapper to improve processing speed by factor ~5
 def conesearch_noerr(ra_s, de_s, ra_b, de_b,
                      conesearch_radius=1./3600.):
     """Performs a simple error-less cone search around coordinates of the 'small' dataset to find objects in the 'big'
@@ -36,17 +36,24 @@ def conesearch_noerr(ra_s, de_s, ra_b, de_b,
         theta_ar = np.sqrt(
             ((ra_s[i] - ra_b[dc_idxs]) * np.cos(np.radians(de_b[dc_idxs]))) ** 2. + (de_s[i] - de_b[dc_idxs]) ** 2.)
         match = np.where(theta_ar < conesearch_radius)
+        
         if len(match[0]) > 0:
+            print(theta_ar)
             for j in match[0]:
                 xm_table[k, :] = [i, dc_idxs[0][j], theta_ar[j] * 3600.]
                 k += 1
+        if i%10000 == 0:
+            print(f"{i}/{num_objects}\r")
 
+    # For some reason, this function sometimes outputs a table with each potential match reported twice
+    # using np.unique we 'throw out' any exact duplicate rows.
+    
     return xm_table[:k, :]
 
 
 def save_xm_results(table, name):
-    """Save XM results"""
-    np.save(f'../results/' + savename, tab_xm_ids)
+    """Save XM results into .npy. Check import time (maybe already fast enough)"""
+    np.save(f'../../results/' + name, table)
 
 
 def test_conesearch():
@@ -66,7 +73,7 @@ def test_conesearch():
 
     if use_real_data:
         tab_h, tab_g = read_gaia_hipp_data(gaia_path, hipp_path, num_hipp=num_samples)
-        ra_g = np.array(tab_g[1].data['ra_prop'], dtype=np.float64)
+        ra_g = np.array(tab_g[1].data['ra_prop'], dtype=npbreak.float64)
         de_g = np.array(tab_g[1].data['dec_prop'], dtype=np.float64)
         ra_h = np.array(tab_h[1].data['ra'], dtype=np.float64)
         de_h = np.array(tab_h[1].data['dec'], dtype=np.float64)

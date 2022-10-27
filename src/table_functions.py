@@ -1,18 +1,25 @@
+############################
+#
+# All functions related to manipulation and extraction of tables
+# Most code made to work with type: astropy.table.Table 
+#
+############################
+
 import copy
 import numpy as np
 
 
 def extract_sky_positions(tab):
     """Extract RA and Dec arrays from labeled tables. Note, names must currently be ra and dec"""
-    ra = tab['ra']
-    de = tab['dec']
+    ra = np.array(tab['ra'], dtype=np.float64) # casting into float64 in a numpy array shouldn't break anything
+    de = np.array(tab['dec'], dtype=np.float64) # but does fix issues with numba
     return ra, de
 
 
 def extract_proper_motions(tab):
     """Extract pmra and pmde arrays from labeled tables. Note, names currently must be pmra and pmdec"""
-    pmra = tab['pmra']
-    pmde = tab['pmdec']
+    pmra = np.array(tab['pmra'], dtype=np.float64) # same comment as in extract_sky_positions
+    pmde = np.array(tab['pmdec'], dtype=np.float64)
     return pmra, pmde
 
 
@@ -21,8 +28,9 @@ def convert_to_ids(xm_table, tab_g, tab_h):
     and converts it to     [hip.hip, gaia.source_id, distance]"""
     tab = copy.deepcopy(xm_table)
     for i in range(xm_table.shape[0]):
-        tab[i][0] = tab_h[1].data['hip'][int(xm_table[i][0])]
-        tab[i][1] = tab_g[1].data['source_id'][int(xm_table[i][1])]
+        print(xm_table[i,:])
+        tab[i][0] = tab_h['hip'][int(xm_table[i][0])] # tab_h[1].data['hip'] <- old. Don't use because we only extract tab[1].data 
+        tab[i][1] = tab_g['source_id'][int(xm_table[i][1])] # in read gaia_hipp_data. This should also work better with queried gaia data
 
     return tab
 
@@ -39,20 +47,17 @@ def batch_table(table, num_batches=None, batch_size=None):
         batches_idxs = np.array_split(idxs, num_batches)
     else:
         raise ValueError("Please provide either num_batches or batch_size")
-    #print(batches_idxs)
+
     batches = []
     for idxs in batches_idxs:
-        #print(idxs)
-        #print(table[idxs])
-        batches.append(table[idxs])   # Not the most efficient, but works
-    #print(batches)
+        batches.append(table[idxs])   # Not the most efficient, but works relatively quickly
     return batches
         
 
 def read_tables(table_path, multiple=False):
     """Either read in a single table, or read all tables following a 'ls'-like search, with * and ?"""
     from astropy.table import Table
-    import glob
+    import globret
 
     if not multiple:
         return Table.read(table_path)
