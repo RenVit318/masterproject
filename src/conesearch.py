@@ -26,9 +26,10 @@ def conesearch_noerr(ra_s, de_s, ra_b, de_b,
 
     Outputs: xm_table [ndarray of size k x 3]: array containing the indices of the cross-matched objects in s and b,
                                                and the angular size in degrees between them."""
+    print(conesearch_radius)
 
     num_objects = ra_s.shape[0]
-    xm_table = np.zeros((int(num_objects * 2), 3))
+    xm_table = np.zeros((int(num_objects * 5), 3))
     k = 0
     for i in range(num_objects):
         dc_idxs = np.where(
@@ -38,7 +39,6 @@ def conesearch_noerr(ra_s, de_s, ra_b, de_b,
         match = np.where(theta_ar < conesearch_radius)
         
         if len(match[0]) > 0:
-            print(theta_ar)
             for j in match[0]:
                 xm_table[k, :] = [i, dc_idxs[0][j], theta_ar[j] * 3600.]
                 k += 1
@@ -51,9 +51,9 @@ def conesearch_noerr(ra_s, de_s, ra_b, de_b,
     return xm_table[:k, :]
 
 
-def save_xm_results(table, name):
+def save_xm_results(table, name, savepath='../results/'):
     """Save XM results into .npy. Check import time (maybe already fast enough)"""
-    np.save(f'../../results/' + name, table)
+    np.save(savepath + name, table)
 
 
 def test_conesearch():

@@ -9,7 +9,6 @@
 ############################
 
 import time
-from astroquery.gaia import Gaia
 from conesearch import conesearch_noerr, save_xm_results
 from data_queries import read_gaia_hipp_data, gaia_login
 from table_functions import extract_sky_positions, convert_to_ids
@@ -35,7 +34,7 @@ def full_run_crossmatch(data_type, data_kwargs, conesearch_params,
         tab_h, _ = read_gaia_hipp_data(**data_kwargs)
 
     ra_h, de_h = extract_sky_positions(tab_h)
-    ra_g, de_g = extract_sky_positions(tab_g)
+    ra_g, de_g = extract_sky_positions(tab_g, ra_id='ra_prop', de_id='dec_prop')
     
 
     print(f"Data Imported. Import runtime: {time.time() - t0:.2f} s\nNo. Gaia objects: {ra_g.shape[0]}\nNo. Hipparcos objects: {ra_h.shape[0]}")
@@ -44,10 +43,10 @@ def full_run_crossmatch(data_type, data_kwargs, conesearch_params,
     t1 = time.time()
     tab_xm = conesearch_noerr(ra_h, de_h, ra_g, de_g, conesearch_params['conesearch_radius'])
     unique_candidates, c = np.unique(tab_xm, axis=0,return_counts=True) 
-    print(c)
+
     tab_xm_ids = convert_to_ids(tab_xm, tab_g, tab_h)
     u,c = np.unique(tab_xm_ids, axis=0, return_counts=True)
-    print(c)
+
     print(f"Conesearch Done. Conesearch runtime: {time.time() - t1} s")
 
     # Save functions
@@ -66,6 +65,17 @@ def full_run_crossmatch(data_type, data_kwargs, conesearch_params,
 
     print(f"One Cross-Match Completed.\nTotal runtime: {time.time() - t0} s")
 
+def make_crossmatch_savename(cat, conesearch_radius, basename='crossmatch'):
+    """"""
+    cat_plus_idx = cat.find('+')
+    conesearch_as = int(conesearch_radius * 3600) # 'breaks' for non-integer (in as) radii 
+    extensions = '' 
+    if cat_plus_idx != -1: # If it is, there is no '+' in the string
+        extensions = cat[cat_plus_idx:cat.find('.')] # cat name ends in .fits
+
+    savename = basename + extensions + f'_{conesearch_as}as'
+    return savename
+    
 
 def experiment_conesearch():
     """"""
@@ -75,13 +85,13 @@ def experiment_conesearch():
     data_type = 'local'  # local or query_gaia
     gaia_cat = 'GaiaBaseCat+PMC+EIB.fits'
     data_kwargs = {
-        'gaia_path': dpath+gaia_cat,                          # Data Path variables
+        'gaia_path': dpath + gaia_cat,                        # Data Path variables
         'hipp_path': dpath + 'hipp_stars_noerr.fits',
         'min_g_mag': 14,                                      # Preprocess variables
         'apply_pm_corr': False,                               # Usually aren't going to need these, but just in case
         'error_inflation_type': 'Brandt21',
         'batch_size': int(1e5),
-        'num_hipp': 100
+        'num_hipp': 'all'
     }
 
     # Conesearch
@@ -91,9 +101,10 @@ def experiment_conesearch():
     }
     ###################################
 
-    #TODO automatically make savename
+    savename = make_crossmatch_savename(gaia_cat, conesearch_params['conesearch_radius'])
+    print(f"Starting full crossmatch run. Saving into basename: {savename}")
     full_run_crossmatch(data_type, data_kwargs, conesearch_params, save_file=True,
-                        savename='conesearch+PMC+EIB_1as')
+                        savename=savename)
 
     ## Analytical functions here ##
 

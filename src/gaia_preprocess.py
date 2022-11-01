@@ -172,8 +172,12 @@ def make_all_catalogues(mag_lim, gaia_epoch, hipp_epoch, batch_size, read_local,
 
     for apply_pm_corr in [True, False]:
         for error_inflation_type in [None, 'Brandt21']:
+            # Skip Selection
+            if apply_pm_corr:
+                continue
+            if error_inflation_type is None:
+                continue
             # Make name
-            
             savename = "GaiaBaseCat"
             if apply_pm_corr:
                 savename += "+PMC"  # Proper Motion Correction

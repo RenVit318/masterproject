@@ -9,17 +9,17 @@ import copy
 import numpy as np
 
 
-def extract_sky_positions(tab):
+def extract_sky_positions(tab, ra_id='ra', de_id='dec'):
     """Extract RA and Dec arrays from labeled tables. Note, names must currently be ra and dec"""
-    ra = np.array(tab['ra'], dtype=np.float64) # casting into float64 in a numpy array shouldn't break anything
-    de = np.array(tab['dec'], dtype=np.float64) # but does fix issues with numba
+    ra = np.array(tab[ra_id], dtype=np.float64) # casting into float64 in a numpy array shouldn't break anything
+    de = np.array(tab[de_id], dtype=np.float64) # but does fix issues with numba
     return ra, de
 
 
-def extract_proper_motions(tab):
+def extract_proper_motions(tab, pmra_id='pmra', pmde_id='pmdec'):
     """Extract pmra and pmde arrays from labeled tables. Note, names currently must be pmra and pmdec"""
-    pmra = np.array(tab['pmra'], dtype=np.float64) # same comment as in extract_sky_positions
-    pmde = np.array(tab['pmdec'], dtype=np.float64)
+    pmra = np.array(tab[pmra_id], dtype=np.float64) # same comment as in extract_sky_positions
+    pmde = np.array(tab[pmde_id], dtype=np.float64)
     return pmra, pmde
 
 
@@ -28,7 +28,6 @@ def convert_to_ids(xm_table, tab_g, tab_h):
     and converts it to     [hip.hip, gaia.source_id, distance]"""
     tab = copy.deepcopy(xm_table)
     for i in range(xm_table.shape[0]):
-        print(xm_table[i,:])
         tab[i][0] = tab_h['hip'][int(xm_table[i][0])] # tab_h[1].data['hip'] <- old. Don't use because we only extract tab[1].data 
         tab[i][1] = tab_g['source_id'][int(xm_table[i][1])] # in read gaia_hipp_data. This should also work better with queried gaia data
 
@@ -57,7 +56,7 @@ def batch_table(table, num_batches=None, batch_size=None):
 def read_tables(table_path, multiple=False):
     """Either read in a single table, or read all tables following a 'ls'-like search, with * and ?"""
     from astropy.table import Table
-    import globret
+    import glob
 
     if not multiple:
         return Table.read(table_path)
