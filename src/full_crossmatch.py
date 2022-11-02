@@ -49,7 +49,7 @@ def full_run_crossmatch(data_type, data_kwargs, conesearch_params,
     u, c = np.unique(tab_xm_ids, axis=0, return_counts=True)
 
     print(f"Conesearch Done. Conesearch runtime: {time.time() - t1} s")
-
+    print(f"{tab_xm_ids.shape[0]} Potential Matches Found")
     # Save functions
     if save_file:
         save_xm_results(tab_xm_ids, savename + '_all_neighbours')
@@ -84,7 +84,7 @@ def experiment_conesearch():
     # Data
     dpath = '../../data/'
     data_type = 'local'  # local or query_gaia
-    gaia_cat = 'GaiaBaseCat+PMC+EIB.fits'
+    gaia_cat = 'GaiaBaseCat.fits'
     data_kwargs = {
         'gaia_path': dpath + gaia_cat,  # Data Path variables
         'hipp_path': dpath + 'hipp_stars_noerr.fits',

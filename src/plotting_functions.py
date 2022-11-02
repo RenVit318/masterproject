@@ -34,7 +34,7 @@ def plot_star_square(table, center_coords, box_size,
     if plot_bprp:
         bp_rp = table['bp_rp'][star_mask]
         bp_rp = np.clip(bp_rp, -5, 5)
-        stars = ax.scatter(ra, de, s=symbol_size, c=bp_rp, cmap='coolwarm')
+        stars = ax.scatter(ra, de, s=symbol_size, c=bp_rp, cmap='coolwarm', vmin=-5, vmax=5)
         plt.colorbar(stars)
     else:
         # Standard Plotting
@@ -54,9 +54,11 @@ def plot_star_square(table, center_coords, box_size,
 
 def main():
     table = fits.open('../../data/GaiaBaseCat+PMC+EIB.fits')[1].data
+    tab_idx = np.random.choice((table['source_id'][table['phot_g_mean_mag'] < 10]).shape[0])
 
-    center_coords = [82.5, -2]  # degrees
-    box_size = 5*3600  # arcseconds
+    center_coords = [table['ra'][tab_idx], table['dec'][tab_idx]]
+    #center_coords = [82.5, -2]  # degrees
+    box_size = 180  # arcseconds
     plot_star_square(table, center_coords, box_size, plot_bprp=True,
                      ra_identifier='ra_prop', dec_identifier='dec_prop')
 
