@@ -56,6 +56,7 @@ def delete_unlabeled_jobs(no_check=False):
     #        print(f"Job not removed: {job.jobid}")
     Gaia.remove_jobs(jobs_to_remove)
 
+
 def read_gaia_hipp_data(gaia_path, hipp_path,
                         num_hipp='all',
                         **kwargs):
@@ -133,12 +134,10 @@ def propagate_batches_error(batches, epoch1, epoch2, num_runs=2):
     elif num_runs > 2:
         raise NotImplementedError("Currently cannot cut a list of tables into more than 2 meta batches.")
 
-    #print(meta_batches)
     counter = 0
     for batches in meta_batches:
         i = counter
         for batch in batches:
-            #print(batch)
             batch_name = f'gaia_astrometric_batch_{i}'
             Gaia.upload_table(upload_resource=batch,
                               table_name=batch_name)  # rkievit user space is increased to 2GB, full dataset is ~1.9GB

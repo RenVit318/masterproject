@@ -4,6 +4,7 @@ from astropy.io import fits
 
 
 def plot_star_square(table, center_coords, box_size,
+                     plot_bprp=False, plot_errors=False,
                      ra_identifier='ra', dec_identifier='dec', mag_identifier='phot_g_mean_mag'):
     """Extensive catch-all plotting functions to show stars in the sky in a certain region
     Inputs: table: some kind of table with named columns containing all information on the stars to plot
@@ -17,22 +18,33 @@ def plot_star_square(table, center_coords, box_size,
     de = table[dec_identifier]
     size = box_size / 3600.  # box size in degrees
 
-    ra_lims = (ra<(ra_mid+size))*(ra>(ra_mid-size))
-    de_lims = (de<(de_mid+size))*(de>(de_mid-size))
-    star_mask = ra_lims*de_lims
+    ra_lims = (ra < (ra_mid + size)) * (ra > (ra_mid - size))
+    de_lims = (de < (de_mid + size)) * (de > (de_mid - size))
+    star_mask = ra_lims * de_lims
 
     ra = ra[star_mask]
     de = de[star_mask]
     mag = table[mag_identifier][star_mask]
-    flux = 10.**(-mag/2.5)
+    flux = 10 ** (-mag / 2.5)
+    symbol_size = 3e4 * flux
+    symbol_size = np.clip(symbol_size, 0.1, 50)
+
     print(f"Stars selected - plotting {len(ra)} stars..")
+    fig, ax = plt.subplots(1, 1, figsize=(5, 5))
+    if plot_bprp:
+        bp_rp = table['bp_rp'][star_mask]
+        bp_rp = np.clip(bp_rp, -5, 5)
+        stars = ax.scatter(ra, de, s=symbol_size, c=bp_rp, cmap='coolwarm')
+        plt.colorbar(stars)
+    else:
+        # Standard Plotting
+        ax.scatter(ra, de, s=symbol_size, c='gold')
 
-    print(flux)
-    fig, ax = plt.subplots(1, 1, figsize=(20, 20))
-    ax.scatter(ra, de, s=3e3*flux, c='gold')
+    if plot_errors:
+        pass  # make error circle plotting
 
-    ax.set_xlim(ra_mid-size, ra_mid+size)
-    ax.set_ylim(de_mid-size, de_mid+size)
+    ax.set_xlim(ra_mid - size, ra_mid + size)
+    ax.set_ylim(de_mid - size, de_mid + size)
     ax.invert_xaxis()
     ax.set_xlabel("RA (J1991.25) [Deg]")
     ax.set_ylabel("Dec (J1991.25) [Deg]")
@@ -41,11 +53,11 @@ def plot_star_square(table, center_coords, box_size,
 
 
 def main():
-    table = fits.open('../../data/gaia_stars_sel12_noerr.fits')[1].data
+    table = fits.open('../../data/GaiaBaseCat+PMC+EIB.fits')[1].data
 
     center_coords = [82.5, -2]  # degrees
-    box_size = 10*3600  # arcseconds
-    plot_star_square(table, center_coords, box_size,
+    box_size = 5*3600  # arcseconds
+    plot_star_square(table, center_coords, box_size, plot_bprp=True,
                      ra_identifier='ra_prop', dec_identifier='dec_prop')
 
 

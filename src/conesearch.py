@@ -16,7 +16,7 @@ from data_queries import read_gaia_hipp_data
 
 @njit()  # numba wrapper to improve processing speed by factor ~5
 def conesearch_noerr(ra_s, de_s, ra_b, de_b,
-                     conesearch_radius=1./3600.):
+                     conesearch_radius=1. / 3600.):
     """Performs a simple error-less cone search around coordinates of the 'small' dataset to find objects in the 'big'
     dataset within a projected circle with conesearch_radius.
 
@@ -33,21 +33,22 @@ def conesearch_noerr(ra_s, de_s, ra_b, de_b,
     k = 0
     for i in range(num_objects):
         dc_idxs = np.where(
-            np.abs(de_b - de_s[i]) < 1.1*conesearch_radius)  # Reduce computational load by calculating fewer distances?
+            np.abs(
+                de_b - de_s[i]) < 1.1 * conesearch_radius)  # Reduce computational load by calculating fewer distances?
         theta_ar = np.sqrt(
             ((ra_s[i] - ra_b[dc_idxs]) * np.cos(np.radians(de_b[dc_idxs]))) ** 2. + (de_s[i] - de_b[dc_idxs]) ** 2.)
         match = np.where(theta_ar < conesearch_radius)
-        
+
         if len(match[0]) > 0:
             for j in match[0]:
                 xm_table[k, :] = [i, dc_idxs[0][j], theta_ar[j] * 3600.]
                 k += 1
-        if i%10000 == 0:
+        if i % 10000 == 0:
             print(f"{i}/{num_objects}\r")
 
     # For some reason, this function sometimes outputs a table with each potential match reported twice
     # using np.unique we 'throw out' any exact duplicate rows.
-    
+
     return xm_table[:k, :]
 
 
@@ -79,7 +80,6 @@ def test_conesearch():
         de_h = np.array(tab_h[1].data['dec'], dtype=np.float64)
         print(f"Data Read.. ({ra_h.shape[0]})")
 
-
     print(f"""Performing Cross Match..\n- Simple {conesearch_radius * 3600} arcsecond cone search""")
     t0 = time.time()
     xm_table = conesearch_noerr(ra_h, de_h, ra_g, de_g)
@@ -89,7 +89,7 @@ def test_conesearch():
     print(f"Number of cross match candidates:   {xm_table.shape[0]}")
 
     savename = f'conesearch_{int(conesearch_radius * 3600)}as_gaia_sel12_2'
-    #np.save(f'../results/' + savename, xm_table)
+    # np.save(f'../results/' + savename, xm_table)
     print(f"Table succesfully saved as {savename}.npy")
 
 
