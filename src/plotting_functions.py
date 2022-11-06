@@ -3,12 +3,15 @@ import matplotlib.pyplot as plt
 from astropy.io import fits
 from matplotlib.patches import Ellipse
 
+
 def plot_star_square(table, center_coords, box_size,
                      plot_color=False, plot_errors=None,
+                     errors_in_rad=False,  # Specifically for Hipparcos data
                      ra_identifier='ra', dec_identifier='dec',
                      era_identifier='e_ra_prop', ede_identifier='e_de_prop',
                      corr_rade_identifier='ra_dec_prop',
-                     mag_identifier='phot_g_mean_mag', color_identifier='bp_rp'):
+                     mag_identifier='phot_g_mean_mag', color_identifier='bp_rp',
+                     ax=None):
     """Extensive catch-all plotting functions to show stars in the sky in a certain region
     Inputs: table: some kind of table with named columns containing all information on the stars to plot
             center_coords: center of coordinates to plot in degrees
@@ -32,11 +35,12 @@ def plot_star_square(table, center_coords, box_size,
     mag = table[mag_identifier][star_mask]
     flux = 10 ** (-mag / 2.5)
     symbol_size = 4e6 * flux
-    print(symbol_size)
+
     symbol_size = np.clip(symbol_size, 0.1, 50)
 
     print(f"Stars selected - plotting {len(ra)} stars..")
-    fig, ax = plt.subplots(1, 1, figsize=(5, 5))
+    if ax is None:
+        fig, ax = plt.subplots(1, 1, figsize=(5, 5))
     if plot_color:
         bp_rp = table[color_identifier][star_mask]
         bp_rp = np.clip(bp_rp, -5, 5)
@@ -46,14 +50,22 @@ def plot_star_square(table, center_coords, box_size,
         # Standard Plotting
         ax.scatter(ra, de, s=symbol_size, c='gold')
 
+    # ERROR PLOTTING #
     if plot_errors is not None:
-        e_ra = table[era_identifier][star_mask] / (1e3 * 3600.) # RA_error is given in mas
+        e_ra = table[era_identifier][star_mask] / (1e3 * 3600.)
         e_de = table[ede_identifier][star_mask] / (1e3 * 3600.)
-        corr_rade = table[corr_rade_identifier]
-        for idx in range(len(ra)):
-            e_circle = Ellipse([ra[idx], de[idx]], e_ra[idx], e_de[idx], corr_rade[idx],
+
+        if plot_errors == 'full':
+            corr_rade = table[corr_rade_identifier]
+            for idx in range(len(ra)):
+                e_circle = Ellipse([ra[idx], de[idx]], e_ra[idx], e_de[idx], corr_rade[idx],
                                    ec='black', fc=None, fill=False)
-            ax.add_patch(e_circle)
+                ax.add_patch(e_circle)
+        elif plot_errors == 'ellipse':
+            for idx in range(len(ra)):
+                e_circle = Ellipse([ra[idx], de[idx]], e_ra[idx], e_de[idx],
+                                   ec='black', fc=None, fill=False)
+                ax.add_patch(e_circle)
 
     ax.set_xlim(ra_mid - size, ra_mid + size)
     ax.set_ylim(de_mid - size, de_mid + size)
@@ -61,17 +73,30 @@ def plot_star_square(table, center_coords, box_size,
     ax.set_xlabel("RA (J1991.25) [Deg]")
     ax.set_ylabel("Dec (J1991.25) [Deg]")
 
-    plt.show()
+    return ax
 
 
 def main():
-    table = fits.open('../../data/GaiaBaseCat+PMC+EIB.fits')[1].data
-    tab_idx = np.random.choice((table['source_id'][table['phot_g_mean_mag'] < 10]).shape[0])
-    center_coords = [table['ra'][tab_idx], table['dec'][tab_idx]]
-    #center_coords = [82.5, -2]  # degrees
-    box_size = 5*3600  # arcseconds
-    plot_star_square(table, center_coords, box_size, plot_color=True, plot_errors=True,
-                     ra_identifier='ra_prop', dec_identifier='dec_prop')
+    table_gaia = fits.open('../../data/GaiaBaseCat+PMC+EIB.fits')[1].data
+    table_hipp = fits.open('../../data/Hipparcos2.fits')[1].data
+
+    # Select a star from the cross-match table
+    xm_tab = np.load('../results/crossmatch+PMC+EIB_2as_all_neighbours.npy')
+    tab_idx = np.where(table_gaia['source_id'] == np.random.choice(xm_tab[:, 1]))
+
+    # tab_idx = np.random.choice((table['source_id'][table['phot_g_mean_mag'] < 10]).shape[0])
+    center_coords = [table_gaia['ra'][tab_idx], table_gaia['dec'][tab_idx]]
+    box_size = 5  # arcseconds
+
+    # Plotting. Maybe convert the identifier arguments into two dictionaries
+    ax = plot_star_square(table_gaia, center_coords, box_size, plot_color=True, plot_errors='full',
+                          ra_identifier='ra_prop', dec_identifier='dec_prop')
+
+    plot_star_square(table_hipp, center_coords, box_size, plot_color=False, plot_errors='ellipse',
+                     era_identifier='e_ra_rad', ede_identifier='e_de_rad',
+                     mag_identifier='hp_mag', color_identifier='b_v', ax=ax)
+
+    plt.show()
 
 
 if __name__ == '__main__':
