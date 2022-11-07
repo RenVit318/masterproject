@@ -9,15 +9,18 @@
 
 from astroquery.gaia import Gaia
 from astropy.io import fits
+from astropy.table import Table
 import time
 
 
 def gaia_login(user='rkievit', password="Gaia3-Hipp2"):
+    global username
+    username = user
     Gaia.login(user=user, password=password)
 
 
-def launch_job(query):
-    job = Gaia.launch_job_async(query=query)
+def launch_job(query, output_format='fits'):
+    job = Gaia.launch_job_async(query=query, output_format=output_format)
     return job
 
 
@@ -49,7 +52,7 @@ def delete_unlabeled_jobs(no_check=False):
 
     for job in jobs:
         print(job)
-        if job.jobid.endswith('O') and len(job.jobid) == 14:
+        if job.jobid.endswith('O') and len(job.jobid) == 14: #True for all jobs
             jobs_to_remove.append(job.jobid)
             #Gaia.remove_jobs(job.jobid)
     #    else:
@@ -117,7 +120,10 @@ def query_gaia_preprocess(mag_lim):
 
 
 def propagate_batches_error(batches, epoch1, epoch2, num_runs=2):
-    """"""
+    """Multithreading solution to propagating Gaia positions and errors. Full runtime of 16e6 entries takes >2h
+    But by batching we reduce batch runtime to only ~few minutes
+    TODO: increase archive communiation time? If slow remove meta batches because we only have a few jobs running
+    at the same time, so we can just remove the user table in the individual function"""
     import threading
     # How many threads are passively active ? Use this to check when all jobs are done
     num_threads_passive = threading.active_count()
@@ -183,11 +189,49 @@ def propagate_error_one(table_name, epoch1, epoch2, save_path='../results'):
                              dec_parallax_corr, dec_pmra_corr, dec_pmdec_corr,
                              parallax_pmra_corr, parallax_pmdec_corr, pmra_pmdec_corr,
                              {epoch1}, {epoch2}) as a1
-                    FROM user_rkievit.{table_name}
+                    FROM user_{username}.{table_name}
                     ) as p"""
     job = launch_job(query)
     tab = get_data(job)
     tab.write('../../results/'+table_name+'.fits', format='fits', overwrite=True)
+
+
+def get_extra_data(tab_xm, extra_data_names):
+    """Query ancillary data from the archive to be used for the best neighbour selection functions
+    Gaia communication is via .fits format so we have to convert np array -> fits and back"""
+
+    table = Table([tab_xm[:,0], tab_xm[:,1], tab_xm[:,2]], names=('hip', 'source_id', 'distance'))
+    table_name = 'xm_table'
+    gaia_login()
+
+    # Upload table with a little bit of error catching failsafe
+    i = 0
+    while True:
+        try:
+            Gaia.upload_table(upload_resource=table, table_name=table_name, format='fits')    
+            break    
+        except:
+            print(f"Table {table_name} for {username} already exists. Trying again with _{i}..")
+            if not table_name[-2] == '_':
+                table_name += f'_{i}'  
+            else:
+                table_name = table_name[0:-2] + f'_{i}'
+            i += 1
+
+    # Query data
+    query = "SELECT xm.*"
+    for name in extra_data_names:
+        query += f', gaia.{name}'
+    query +=f"""
+            FROM gaiadr3.gaia_source as gaia
+            JOIN user_{username}.{table_name} AS xm USING (source_id)"""
+    job = launch_job(query)
+    res = get_data(job)
+    print(res)
+
+    # Remove table    
+    Gaia.delete_user_table(table_name)
+
 
 
 def main():
