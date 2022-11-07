@@ -6,7 +6,7 @@
 #
 ############################
 import numpy as np
-from data_queries import get_extra_data
+from data_queries import query_extra_data
 
 def nearest(matches):
     """Determines the best match based only on distance
@@ -36,25 +36,41 @@ def check_hip_sorted(array):
     return True
             
 
-def select_best_neighbour(tab_xm, best_match_selection, savename):
+def merge_extra_data(tab_xm, extra_data_names, GaiaCat):
+    """Merge tab_xm and selected attributes from GaiaCat together based on source_id"""
+    
+
+
+def select_best_neighbour(tab_xm, best_match_selection, savename, GaiaCat=None):
     """From a table containing all possible cross-matches, selects the best neighbour
        for each hipparcos object with >1 reported neighbour"""
 
-    # Check which selection type
+    # Check which selection type is inputted, and appended what we need to do to get extra data
+    # Options are:
+    #   - None (can be anything) : No extra data is required for the selection
+    #   - merge : Merge xm-table with a GaiaCat in Python
+    #   - query : Merge xm-table with the Gaia table in the archive.
+    #             Slowest by far. Use only if required data not in the GaiaCat
+
     if best_match_selection == 'nearest':
         select_func = nearest
-        extra_data_names = None # Defines if we need to query for extra data
+        get_extra_data = None # Defines if we need to query for extra data
     elif best_match_selection == 'brightest':
         select_func = brightest
+        get_extra_data = 'query' # CHANGE. For testing purposes
         extra_data_names = ['phot_g_mean_mag']
     elif best_match_selection == 'likeliest_position':
         select_func = likeliest_position
-        # Need to somehow query propagated position errors (do they change?)
-        extra_data_names = ['ra_error, dec_error']  # Also need Hipparcos errors here?
+        get_extra_data = 'merge'
+        extra_data_names = ['e_ra_prop, e_de_prop, ra_dec_prop']  # Also need Hipparcos errors here?
 
     # Gather ancillary data. 
-    if extra_data_names is not None:
-        tab_xm, extra_data_table = get_extra_data(tab_xm, extra_data_names)
+    if get_extra_data == 'merge':
+        tab_xm, extra_data_table = merge_extra_data(tab_xm, extra_data_names, GaiaCat)
+    elif get_extra_data == 'query':
+        tab_xm, extra_data_table = query_extra_data(tab_xm[:100], extra_data_names)
+    else:
+        print(f"Extra data parameter {get_extra_data} unkown. Continuing without querying gathering data")
     
 
     # Check all objects with >1 candidate. Based on
@@ -75,7 +91,7 @@ def select_best_neighbour(tab_xm, best_match_selection, savename):
     for i in range(len(vals)):
         if count[i] > 1:
             matches = tab_xm[idx_start[i]:idx_start[i]+count[i]]
-            if extra_data_names is not None:
+            if get_extra_data is not None:
                 extra_data = extra_data_table[idx_start[i]:idx_start[i]+count[i]]
                 best_match = select_func(matches, extra_data)
             else:
@@ -91,7 +107,7 @@ def select_best_neighbour(tab_xm, best_match_selection, savename):
 def main():
     r_path = '../results/'
     xm_tab_name = 'crossmatch+PMC+EIB_1as_all_neighbours.npy'
-    best_match_selection = 'nearest'
+    best_match_selection = 'brightest'
 
     tab_xm = np.load(r_path + xm_tab_name)
     addition_index = xm_tab_name.find('_all')

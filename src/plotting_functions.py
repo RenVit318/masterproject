@@ -16,7 +16,7 @@ def plot_star_square(table, center_coords, box_size,
     Inputs: table: some kind of table with named columns containing all information on the stars to plot
             center_coords: center of coordinates to plot in degrees
             box_size: size of the box plot in arc-seconds
-    TODO: - Add error plotting, PM plotting, Brightness dependent plotting, Colour Plotting"""
+    TODO: - Add PM plotting"""
 
     # Selection of which stars to plot within the chosen interval
     ra_mid, de_mid = center_coords[0], center_coords[1]

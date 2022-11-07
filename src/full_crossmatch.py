@@ -4,7 +4,7 @@
 # Currently can read or query data (+ all necessary preprocessing)
 # and perform an n arcsecond conesearch selecting all neighbours
 #
-# PLANNED: Best neighbour selection functions, automatic analytics creation
+# PLANNED: automatic analytics creation
 #
 ############################
 
