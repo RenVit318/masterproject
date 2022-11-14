@@ -167,37 +167,12 @@ def full_preprocess(mag_lim=14, gaia_epoch=2016., hipp_epoch=1991.25, batch_size
         return gaia_tab_prop
 
 
-def make_all_catalogues(mag_lim, gaia_epoch, hipp_epoch, batch_size, read_local, data_path):
-    """Given a certain set of standard values, iterates over all tunable variables"""
-
-    for apply_pm_corr in [True, False]:
-        for error_inflation_type in [None, 'Brandt21']:
-            # Skip Selection
-            if apply_pm_corr:
-                continue
-            if error_inflation_type is None:
-                continue
-            # Make name
-            savename = "GaiaBaseCat"
-            if apply_pm_corr:
-                savename += "+PMC"  # Proper Motion Correction
-            if error_inflation_type == 'Brandt21':
-                savename += "+EIB"  # Error Inflation Brandt
-
-            print(f"Starting Gaia Preprocessing Into: {savename}")
-
-            full_preprocess(mag_lim, gaia_epoch, hipp_epoch, batch_size=batch_size, read_local=read_local, data_path=data_path,
-                            apply_pm_corr=apply_pm_corr, error_inflation_type=error_inflation_type,
-                            savename=savename)
-            #delete_unlabeled_jobs()
-
-
 def main():
     mag_lim = 5   # determined with H-G relations
     gaia_epoch = 2016.0
     hipp_epoch = 1991.25
     batch_size = int(135)  # Note: Code currently does not work if only one batch is made
-    read_local = False # UvL Vdesk can't properly download the .vot file. Fix this once on location.
+    read_local = False  # UvL Vdesk can't properly download the .vot file. Fix this once on location.
 
     data_path = '../../data/gaia_process_maglim14.vot'
 

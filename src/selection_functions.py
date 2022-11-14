@@ -8,11 +8,13 @@
 import numpy as np
 from data_queries import query_extra_data
 
-def nearest(matches):
+
+def nearest(matches, distances):
     """Determines the best match based only on distance
     Requires the input to be: (ID1, ID2, distance)"""
-    best_match_idx = np.argmin(matches[:,2])
+    best_match_idx = np.argmin(distances)
     return matches[best_match_idx, 0:2]
+
 
 def brightest(matches, mag):
     """Determines the best match based only on the brightest object"""
@@ -28,20 +30,20 @@ def likeliest_position():
 def check_hip_sorted(array):
     """If called, performs a check whether or not the Hipparcos array is sorted low to high
     This is because the best neighbour selection function works on the assumption that they are"""
-    for i in range(len(array)-1):
-        if array[i+1] < array[i]:
+    for i in range(len(array) - 1):
+        if array[i + 1] < array[i]:
             print("This array is not sorted")
             return False
     print("This array is sorted")
     return True
-            
-
-def merge_extra_data(tab_xm, extra_data_names, GaiaCat):
-    """Merge tab_xm and selected attributes from GaiaCat together based on source_id"""
-    
 
 
-def select_best_neighbour(tab_xm, best_match_selection, savename, GaiaCat=None):
+def merge_extra_data():
+    """Get data from one of the GaiaCats. Can do this with pandas"""
+    pass
+
+
+def select_best_neighbour(tab_xm, distances, best_match_selection, GaiaCat=None):
     """From a table containing all possible cross-matches, selects the best neighbour
        for each hipparcos object with >1 reported neighbour"""
 
@@ -54,54 +56,46 @@ def select_best_neighbour(tab_xm, best_match_selection, savename, GaiaCat=None):
 
     if best_match_selection == 'nearest':
         select_func = nearest
-        get_extra_data = None # Defines if we need to query for extra data
+        get_extra_data = None  # Defines if we need to query for extra data
+        extra_data_table = distances
     elif best_match_selection == 'brightest':
         select_func = brightest
-        get_extra_data = 'query' # CHANGE. For testing purposes
+        get_extra_data = 'query'  # CHANGE. For testing purposes
         extra_data_names = ['phot_g_mean_mag']
     elif best_match_selection == 'likeliest_position':
         select_func = likeliest_position
         get_extra_data = 'merge'
         extra_data_names = ['e_ra_prop, e_de_prop, ra_dec_prop']  # Also need Hipparcos errors here?
 
+    # We cannot easily sort the array due to RAM constraints. So we have to assume Hip array is sorted
+    if not check_hip_sorted(tab_xm[:, 0]):
+        raise NotImplementedError(
+            "The provided Hipparcos ID's are not sorted. Currently this function assumes they are. Fix this")
+
     # Gather ancillary data. 
     if get_extra_data == 'merge':
         tab_xm, extra_data_table = merge_extra_data(tab_xm, extra_data_names, GaiaCat)
     elif get_extra_data == 'query':
-        tab_xm, extra_data_table = query_extra_data(tab_xm[:100], extra_data_names)
+        tab_xm, extra_data_table = query_extra_data(tab_xm, extra_data_names)
     else:
-        print(f"Extra data parameter {get_extra_data} unkown. Continuing without querying gathering data")
-    
+        print(f"Extra data parameter {get_extra_data} unknown. Continuing without gathering extra data")
 
-    # Check all objects with >1 candidate. Based on
-    # https://stackoverflow.com/questions/30003068/how-to-get-a-list-of-all-indices-of-repeated-elements-in-a-numpy-array
-    # The sorting step is probably not necessary because the crossmatch algorithm automatically sorts on hip. But we do do it
-    #hip = tab_xm[:, 0]
-    #hip_sort_idxs = np.argsort(hip)  
-    #tab_xm_sorted = tab_xm[:, hip_sort_idxs]
-    # But, we cannot easily sort the array due to RAM constraints. So we have to assume Hip array is sorted
-    if not check_hip_sorted(tab_xm[:,0]):
-        raise NotImplementedError("The provided Hipparcos ID's are not sorted. Currently this function assumes they are. Fix this")
+    vals, idx_start, count = np.unique(tab_xm[:, 0], return_counts=True, return_index=True)
 
-    vals, idx_start, count = np.unique(tab_xm[:,0], return_counts=True, return_index=True)
-    
-    best_matches_array = np.zeros((len(vals), 2)) # save the best matches in here
-    
+    best_matches_array = np.zeros((len(vals), 2))  # save the best matches in here
+
     # Call selection function
     for i in range(len(vals)):
         if count[i] > 1:
-            matches = tab_xm[idx_start[i]:idx_start[i]+count[i]]
-            if get_extra_data is not None:
-                extra_data = extra_data_table[idx_start[i]:idx_start[i]+count[i]]
-                best_match = select_func(matches, extra_data)
-            else:
-                best_match = select_func(matches)
+            matches = tab_xm[idx_start[i]:idx_start[i] + count[i]]
+            extra_data = extra_data_table[idx_start[i]:idx_start[i] + count[i]]
+            best_match = select_func(matches, extra_data)
+
         else:
-            best_match = tab_xm[idx_start[i], 0:2] # get the Hipparcos and Gaia ID
-        best_matches_array[i] = best_match       
+            best_match = tab_xm[idx_start[i], 0:2]  # get the Hipparcos and Gaia ID
+        best_matches_array[i] = best_match
 
     return best_matches_array
-
 
 
 def main():
@@ -116,8 +110,6 @@ def main():
     print(f'Starting single selection run w/ {best_match_selection}')
     print(f"Saving into '{savename}'...")
     best_matches_array = select_best_neighbour(tab_xm, best_match_selection, savename)
-
-
 
 
 if __name__ == '__main__':

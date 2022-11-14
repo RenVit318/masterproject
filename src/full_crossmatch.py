@@ -19,7 +19,8 @@ import numpy as np  # Remove
 
 
 def full_run_crossmatch(data_type, data_kwargs, conesearch_params,
-                        save_file=False, savename='crossmatch'):
+                        save_file=False, savename='crossmatch',
+                        all_selectors=['nearest', 'brightest']):
     """Execute a complete iteration of the cross-match algorithm with either a locally stored table or a queried table from
        the Gaia Archive. The latter is not really feasible for mag_lim>~12 as processing takes up to 8 hours, store those locally
        Procedure:
@@ -43,11 +44,8 @@ def full_run_crossmatch(data_type, data_kwargs, conesearch_params,
     print(f"Starting {int(conesearch_params['conesearch_radius'] * 3600)} arcsecond Conesearch")
     t1 = time.time()
     tab_xm = conesearch_noerr(ra_h, de_h, ra_g, de_g, conesearch_params['conesearch_radius'])
-    # unique_candidates, c = np.unique(tab_xm, axis=0, return_counts=True)
-    print(tab_xm[:,1])
+
     tab_xm_ids, distances = convert_to_ids(tab_xm, tab_g, tab_h)
-    print(tab_xm_ids[:,1])
-    # u, c = np.unique(tab_xm_ids, axis=0, return_counts=True)
 
     print(f"Conesearch Done. Conesearch runtime: {time.time() - t1} s")
     print(f"{tab_xm_ids.shape[0]} Potential Matches Found")
@@ -58,17 +56,21 @@ def full_run_crossmatch(data_type, data_kwargs, conesearch_params,
 
     selection_type = conesearch_params['best_match_selection']
     if selection_type is not None:
-        one_xm_tab = select_best_neighbour(tab_xm_ids, **conesearch_params)
+        if selection_type == 'all':  # then loop over all selection methods
+            for selector in all_selectors:
+                one_xm_tab = select_best_neighbour(tab_xm_ids, distances, selector)
 
-        if save_file:
-            save_xm_results(one_xm_tab, f'{savename}_best_neighbour_{selection_type}')
-            print(f"Cross-Match results saved as {savename}_best_neighbour.npy")
+                if save_file:
+                    save_xm_results(one_xm_tab, f'{savename}_best_neighbour_{selector}')
+                    print(f"Cross-Match results saved as {savename}_best_neighbour_{selector}.npy")
+        else:
+            one_xm_tab = select_best_neighbour(tab_xm_ids, distances, selection_type)
+
+            if save_file:
+                save_xm_results(one_xm_tab, f'{savename}_best_neighbour_{selection_type}')
+                print(f"Cross-Match results saved as {savename}_best_neighbour.npy")
 
     print(f"One Cross-Match Completed.\nTotal runtime: {time.time() - t0} s")
-
-    print(tab_xm_ids[:,1])
-    input()
-    query_extra_data(tab_xm_ids,  ['phot_g_mean_mag'])
 
 
 def make_crossmatch_savename(cat, conesearch_radius, basename='crossmatch'):
@@ -103,7 +105,7 @@ def experiment_conesearch():
     # Conesearch
     conesearch_params = {
         'conesearch_radius': 1. / 3600.,
-        'best_match_selection': None
+        'best_match_selection': 'all'
     }
     ###################################
 

@@ -231,13 +231,14 @@ def query_extra_data(tab_xm, extra_data_names):
              JOIN user_{username}.{table_name} AS xm USING (source_id)"""
     job = launch_job(query)
     res = get_data(job)
+    extra_data = np.zeros((tab_xm.shape[0], len(extra_data_names)))
+    for i, name in enumerate(extra_data_names):
+        extra_data[:, 0] = res[name]
 
     # Remove table    
-    # Gaia.delete_user_table(table_name)
+    Gaia.delete_user_table(table_name)
 
-    # Currently still bugfixing in the Archive. Need to complete res -> array conversion?
-    # Need to check data type of res.
-
+    return tab_xm, extra_data
 
 def main():
     # gaia_login()
