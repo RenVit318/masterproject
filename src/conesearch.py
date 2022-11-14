@@ -26,7 +26,6 @@ def conesearch_noerr(ra_s, de_s, ra_b, de_b,
 
     Outputs: xm_table [ndarray of size k x 3]: array containing the indices of the cross-matched objects in s and b,
                                                and the angular size in degrees between them."""
-    print(conesearch_radius)
 
     num_objects = ra_s.shape[0]
     xm_table = np.zeros((int(num_objects * 5), 3))
@@ -34,7 +33,7 @@ def conesearch_noerr(ra_s, de_s, ra_b, de_b,
     for i in range(num_objects):
         dc_idxs = np.where(
             np.abs(
-                de_b - de_s[i]) < 1.1 * conesearch_radius)  # Reduce computational load by calculating fewer distances?
+                de_b - de_s[i]) < 1.1 * conesearch_radius)  # Reduce computational load by calculating fewer distances
         theta_ar = np.sqrt(
             ((ra_s[i] - ra_b[dc_idxs]) * np.cos(np.radians(de_b[dc_idxs]))) ** 2. + (de_s[i] - de_b[dc_idxs]) ** 2.)
         match = np.where(theta_ar < conesearch_radius)
@@ -44,10 +43,7 @@ def conesearch_noerr(ra_s, de_s, ra_b, de_b,
                 xm_table[k, :] = [i, dc_idxs[0][j], theta_ar[j] * 3600.]
                 k += 1
         if i % 10000 == 0:
-            print(f"{i}/{num_objects}\r")
-
-    # For some reason, this function sometimes outputs a table with each potential match reported twice
-    # using np.unique we 'throw out' any exact duplicate rows.
+            print(f"{i}/{num_objects}")
 
     return xm_table[:k, :]
 
@@ -63,7 +59,7 @@ def test_conesearch():
 
     # Real Data
     dpath = '../../data/'
-    gaia_path = dpath + 'gaia_stars_sel12_noerr.fits'
+    gaia_path = dpath + 'GaiaBaseCat5.fits'
     hipp_path = dpath + 'hipp_stars_noerr.fits'
 
     use_real_data = False
@@ -74,7 +70,7 @@ def test_conesearch():
 
     if use_real_data:
         tab_h, tab_g = read_gaia_hipp_data(gaia_path, hipp_path, num_hipp=num_samples)
-        ra_g = np.array(tab_g[1].data['ra_prop'], dtype=npbreak.float64)
+        ra_g = np.array(tab_g[1].data['ra_prop'], dtype=np.float64)
         de_g = np.array(tab_g[1].data['dec_prop'], dtype=np.float64)
         ra_h = np.array(tab_h[1].data['ra'], dtype=np.float64)
         de_h = np.array(tab_h[1].data['dec'], dtype=np.float64)
@@ -90,7 +86,7 @@ def test_conesearch():
 
     savename = f'conesearch_{int(conesearch_radius * 3600)}as_gaia_sel12_2'
     # np.save(f'../results/' + savename, xm_table)
-    print(f"Table succesfully saved as {savename}.npy")
+    print(f"Table successfully saved as {savename}.npy")
 
 
 def main():

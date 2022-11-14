@@ -19,8 +19,8 @@ def gaia_login(user='rkievit', password="Gaia3-Hipp2"):
     Gaia.login(user=user, password=password)
 
 
-def launch_job(query, output_format='fits'):
-    job = Gaia.launch_job_async(query=query, output_format=output_format)
+def launch_job(query):
+    job = Gaia.launch_job_async(query=query)  # , output_format=output_format)
     return job
 
 
@@ -36,25 +36,26 @@ def delete_unlabeled_jobs(no_check=False):
     2. The job name ends with the letter 'O'
     Note that: therefore, if any given job name has these characters, it is deleted."""
 
-    if no_check: # Extra safety point
+    if no_check:  # Extra safety point
         pass
     else:
-        delete_check = input("Running this code means all Gaia jobs of logged in user will be deleted, continue?.. (y/n)")
+        delete_check = input(
+            "Running this code means all Gaia jobs of logged in user will be deleted, continue?.. (y/n)")
         if delete_check == 'y':
             pass
         else:
             print("Understood. Not deleting jobs")
             return
 
-    gaia_login() # Just make sure we're logged in
+    gaia_login()  # Just make sure we're logged in
     jobs = Gaia.list_async_jobs()
     jobs_to_remove = []
 
     for job in jobs:
         print(job)
-        if job.jobid.endswith('O') and len(job.jobid) == 14: #True for all jobs
+        if job.jobid.endswith('O') and len(job.jobid) == 14:  # True for all jobs
             jobs_to_remove.append(job.jobid)
-            #Gaia.remove_jobs(job.jobid)
+            # Gaia.remove_jobs(job.jobid)
     #    else:
     #        print(f"Job not removed: {job.jobid}")
     Gaia.remove_jobs(jobs_to_remove)
@@ -193,7 +194,7 @@ def propagate_error_one(table_name, epoch1, epoch2, save_path='../results'):
                     ) as p"""
     job = launch_job(query)
     tab = get_data(job)
-    tab.write('../../results/'+table_name+'.fits', format='fits', overwrite=True)
+    tab.write('../../results/' + table_name + '.fits', format='fits', overwrite=True)
 
 
 def query_extra_data(tab_xm, extra_data_names):
@@ -201,8 +202,9 @@ def query_extra_data(tab_xm, extra_data_names):
     Gaia communication is via .fits format so we have to convert np array -> fits and back"""
     import numpy as np
 
-    gaia_ids = np.array(tab_xm[:,1], dtype=int)
-    table = Table([tab_xm[:,0], gaia_ids, tab_xm[:,2]], names=('hip', 'source_id', 'distance'))
+    gaia_ids = np.array(tab_xm[:, 1], dtype=np.int64)
+    table = Table([tab_xm[:, 0], gaia_ids],
+                  names=('hip', 'source_id'))  # , dtype=(int, int, np.float64))
     table_name = 'xm_table'
     gaia_login()
 
@@ -210,12 +212,12 @@ def query_extra_data(tab_xm, extra_data_names):
     i = 0
     while True:
         try:
-            Gaia.upload_table(upload_resource=table, table_name=table_name, format='fits')    
-            break    
+            Gaia.upload_table(upload_resource=table, table_name=table_name)
+            break
         except:
             print(f"Table {table_name} for {username} already exists. Trying again with _{i}..")
             if not table_name[-2] == '_':
-                table_name += f'_{i}'  
+                table_name += f'_{i}'
             else:
                 table_name = table_name[0:-2] + f'_{i}'
             i += 1
@@ -224,26 +226,28 @@ def query_extra_data(tab_xm, extra_data_names):
     query = "SELECT xm.*"
     for name in extra_data_names:
         query += f', gaia.{name}'
-    query +=f"""
-            FROM gaiadr3.gaia_source as gaia
-            JOIN user_{username}.{table_name} AS xm USING (source_id)"""
+    query += f"""
+             FROM gaiadr3.gaia_source as gaia
+             JOIN user_{username}.{table_name} AS xm USING (source_id)"""
     job = launch_job(query)
     res = get_data(job)
 
     # Remove table    
-    Gaia.delete_user_table(table_name)
+    # Gaia.delete_user_table(table_name)
 
     # Currently still bugfixing in the Archive. Need to complete res -> array conversion?
     # Need to check data type of res.
 
 
 def main():
-    #gaia_login()
-    #table = query_gaia_simple_conesearch(back_prop_gaia=True, mag_lim=5)
-    #return table
-    delete_unlabeled_jobs()
+    # gaia_login()
+    # table = query_gaia_simple_conesearch(back_prop_gaia=True, mag_lim=5)
+    # return table
+    # delete_unlabeled_jobs()
+    import numpy as np
+    tab_xm = np.load('../results/crossmatch_1as_all_neighbours.npy')
+    query_extra_data(tab_xm, ['phot_g_mean_mag'])
 
 
 if __name__ == '__main__':
     main()
-

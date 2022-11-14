@@ -25,13 +25,15 @@ def extract_proper_motions(tab, pmra_id='pmra', pmde_id='pmdec'):
 
 def convert_to_ids(xm_table, tab_g, tab_h):
     """Takes an array with [hip_array_number, gaia_array_number, distance]
-    and converts it to     [hip.hip, gaia.source_id, distance]"""
-    tab = copy.deepcopy(xm_table)
-    for i in range(xm_table.shape[0]):
-        tab[i][0] = tab_h['hip'][int(xm_table[i][0])] # tab_h[1].data['hip'] <- old. Don't use because we only extract tab[1].data 
-        tab[i][1] = tab_g['source_id'][int(xm_table[i][1])] # in read gaia_hipp_data. This should also work better with queried gaia data
+    and converts it to     [hip.hip, gaia.source_id] and [distance]"""
+    tab = np.zeros((xm_table.shape[0], 2), dtype=np.int64)
+    print(tab.shape)
 
-    return tab
+    for i in range(xm_table.shape[0]):
+        tab[i][0] = int(tab_h['hip'][int(xm_table[i][0])])  # tab_h[1].data['hip'] <- old. Don't use because we only extract tab[1].data
+        tab[i][1] = np.int64(tab_g['source_id'][int(xm_table[i][1])])  # in read gaia_hipp_data. This should also work better with queried gaia data
+
+    return tab, xm_table[:,2]
 
 
 def batch_table(table, num_batches=None, batch_size=None):

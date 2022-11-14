@@ -10,7 +10,7 @@
 
 import time
 from conesearch import conesearch_noerr, save_xm_results
-from data_queries import read_gaia_hipp_data, gaia_login
+from data_queries import read_gaia_hipp_data, gaia_login, query_extra_data
 from table_functions import extract_sky_positions, convert_to_ids
 from gaia_preprocess import full_preprocess
 from selection_functions import select_best_neighbour
@@ -43,10 +43,11 @@ def full_run_crossmatch(data_type, data_kwargs, conesearch_params,
     print(f"Starting {int(conesearch_params['conesearch_radius'] * 3600)} arcsecond Conesearch")
     t1 = time.time()
     tab_xm = conesearch_noerr(ra_h, de_h, ra_g, de_g, conesearch_params['conesearch_radius'])
-    unique_candidates, c = np.unique(tab_xm, axis=0, return_counts=True)
-
-    tab_xm_ids = convert_to_ids(tab_xm, tab_g, tab_h)
-    u, c = np.unique(tab_xm_ids, axis=0, return_counts=True)
+    # unique_candidates, c = np.unique(tab_xm, axis=0, return_counts=True)
+    print(tab_xm[:,1])
+    tab_xm_ids, distances = convert_to_ids(tab_xm, tab_g, tab_h)
+    print(tab_xm_ids[:,1])
+    # u, c = np.unique(tab_xm_ids, axis=0, return_counts=True)
 
     print(f"Conesearch Done. Conesearch runtime: {time.time() - t1} s")
     print(f"{tab_xm_ids.shape[0]} Potential Matches Found")
@@ -64,6 +65,10 @@ def full_run_crossmatch(data_type, data_kwargs, conesearch_params,
             print(f"Cross-Match results saved as {savename}_best_neighbour.npy")
 
     print(f"One Cross-Match Completed.\nTotal runtime: {time.time() - t0} s")
+
+    print(tab_xm_ids[:,1])
+    input()
+    query_extra_data(tab_xm_ids,  ['phot_g_mean_mag'])
 
 
 def make_crossmatch_savename(cat, conesearch_radius, basename='crossmatch'):
@@ -84,11 +89,11 @@ def experiment_conesearch():
     # Data
     dpath = '../../data/'
     data_type = 'local'  # local or query_gaia
-    gaia_cat = 'GaiaBaseCat.fits'
+    gaia_cat = 'GaiaBaseCat5.fits'
     data_kwargs = {
         'gaia_path': dpath + gaia_cat,  # Data Path variables
         'hipp_path': dpath + 'hipp_stars_noerr.fits',
-        'min_g_mag': 14,  # Preprocess variables
+        'min_g_mag': 4,  # Preprocess variables
         'apply_pm_corr': False,  # Usually aren't going to need these, but just in case
         'error_inflation_type': 'Brandt21',
         'batch_size': int(1e5),

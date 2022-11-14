@@ -160,7 +160,7 @@ def full_preprocess(mag_lim=14, gaia_epoch=2016., hipp_epoch=1991.25, batch_size
                     gaia_tab_prop.write('../../data/' + savename + '.fits', format='fits')
                 except OSError:
                     continue
-                saved = True # If no error it should call this
+                saved = True  # If no error it should call this
     print(f"Completed. Total runtime: {time.time() - t1:.0f}s")
 
     if return_cat:
@@ -193,16 +193,16 @@ def make_all_catalogues(mag_lim, gaia_epoch, hipp_epoch, batch_size, read_local,
 
 
 def main():
-    mag_lim = 14   # determined with H-G relations
+    mag_lim = 5   # determined with H-G relations
     gaia_epoch = 2016.0
     hipp_epoch = 1991.25
-    batch_size = int(1e5)  # Note: Code currently does not work if only one batch is made
+    batch_size = int(135)  # Note: Code currently does not work if only one batch is made
     read_local = False # UvL Vdesk can't properly download the .vot file. Fix this once on location.
 
     data_path = '../../data/gaia_process_maglim14.vot'
 
-    make_all_catalogues(mag_lim, gaia_epoch, hipp_epoch, batch_size, read_local, data_path)
-    #full_preprocess(mag_lim, gaia_epoch, hipp_epoch, batch_size, apply_pm_corr=True)
+    #make_all_catalogues(mag_lim, gaia_epoch, hipp_epoch, batch_size, read_local, data_path)
+    full_preprocess(mag_lim, gaia_epoch, hipp_epoch, batch_size, savename='GaiaBaseCat5')
     
 if __name__ == '__main__':
     main()
