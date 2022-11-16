@@ -95,7 +95,10 @@ def query_gaia_simple_conesearch(mag_lim=None,
         query = query + f"FROM \
                          ( \
                          SELECT *, EPOCH_PROP(ra, dec, parallax, pmra, pmdec, radial_velocity, {epoch_2}, {epoch_1}) as a0  "
-
+evit/masterproject/masterproject/src/notebooks',
+ '/home/rkievit/anaconda3/lib/python39.zip',
+ '/home/rkievit/anaconda3/lib/python3.9',
+ '/home/rkievit/anaconda3/lib/python3.9/lib-dynload',
     query = query + "FROM gaiadr3.gaia_source AS gaia "
 
     if mag_lim is not None:
@@ -197,7 +200,7 @@ def propagate_error_one(table_name, epoch1, epoch2, save_path='../results'):
     tab.write('../../results/' + table_name + '.fits', format='fits', overwrite=True)
 
 
-def query_extra_data(tab_xm, extra_data_names):
+def query_extra_data(tab_xm, extra_data_names, cat='gaia'):
     """Query ancillary data from the archive to be used for the best neighbour selection functions
     Gaia communication is via .fits format so we have to convert np array -> fits and back"""
     import numpy as np
@@ -223,11 +226,16 @@ def query_extra_data(tab_xm, extra_data_names):
             i += 1
 
     # Query data
+    if cat == 'gaia':
+        cat_name = 'gaiadr3.gaia_source'
+    elif cat == 'hipp':
+        cat_name = 'public.hipparcos_newreduction'
+
     query = "SELECT xm.*"
     for name in extra_data_names:
-        query += f', gaia.{name}'
+        query += f', {cat}.{name}'
     query += f"""
-             FROM gaiadr3.gaia_source as gaia
+             FROM gaiadr3.gaia_source as {cat}
              JOIN user_{username}.{table_name} AS xm USING (source_id)"""
     job = launch_job(query)
     res = get_data(job)
