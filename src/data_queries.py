@@ -225,20 +225,27 @@ def query_extra_data(tab_xm, extra_data_names, cat='gaia'):
     # Query data
     if cat == 'gaia':
         cat_name = 'gaiadr3.gaia_source'
+        match_on = 'source_id'
     elif cat == 'hipp':
         cat_name = 'public.hipparcos_newreduction'
+        match_on = 'hip'
 
     query = "SELECT xm.*"
     for name in extra_data_names:
         query += f', {cat}.{name}'
     query += f"""
              FROM {cat_name} as {cat}
-             JOIN user_{username}.{table_name} AS xm USING (source_id)"""
-    job = launch_job(query)
-    res = get_data(job)
-    extra_data = np.zeros((tab_xm.shape[0], len(extra_data_names)))
+             JOIN user_{username}.{table_name} AS xm USING ({match_on})"""
+    try:
+        job = launch_job(query)
+        res = get_data(job)
+    except:
+        Gaia.delete_user_table(table_name)
+        raise
+
+    extra_data = np.zeros((tab_xm.shape[0], len(extra_data_names)))#, dtype=np.float64)
     for i, name in enumerate(extra_data_names):
-        extra_data[:, 0] = res[name]
+        extra_data[:, i] = res[name]
 
     # Just in case the Archive shuffled our matches, reassign all hip and source_id values to match the extra data
     new_tab_xm = np.zeros((tab_xm.shape[0], 2), dtype=np.int64)
@@ -255,10 +262,10 @@ def main():
     # gaia_login()
     # table = query_gaia_simple_conesearch(back_prop_gaia=True, mag_lim=5)
     # return table
-    # delete_unlabeled_jobs()
+    #delete_unlabeled_jobs()
     import numpy as np
     tab_xm = np.load('../results/crossmatch_1as_all_neighbours.npy')
-    query_extra_data(tab_xm, ['phot_g_mean_mag'])
+    print(query_extra_data(tab_xm, ['pmra', 'pmdec']))
 
 
 if __name__ == '__main__':

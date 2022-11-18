@@ -112,6 +112,10 @@ def main():
     print(f"Saving into '{savename}'...")
     best_matches_array = select_best_neighbour(tab_xm, None, best_match_selection)
 
+    _, res = query_extra_data(best_matches_array, ['phot_g_mean_mag'])
+    print(best_matches_array.shape)
+    print(res.shape)
+
 
 if __name__ == '__main__':
     main()
