@@ -40,7 +40,8 @@ def check_hip_sorted(array):
 
 def merge_extra_data():
     """Get data from one of the GaiaCats. Can do this with pandas"""
-    pass
+    tab_xm, extra_data_table = None, None
+    return tab_xm, extra_data_table
 
 
 def select_best_neighbour(tab_xm, distances, best_match_selection, GaiaCat=None):
@@ -74,7 +75,7 @@ def select_best_neighbour(tab_xm, distances, best_match_selection, GaiaCat=None)
 
     # Gather ancillary data. 
     if get_extra_data == 'merge':
-        tab_xm, extra_data_table = merge_extra_data(tab_xm, extra_data_names, GaiaCat)
+        tab_xm, extra_data_table = merge_extra_data(tab_xm, extra_data_names)
     elif get_extra_data == 'query':
         tab_xm, extra_data_table = query_extra_data(tab_xm, extra_data_names)
     else:
@@ -82,7 +83,7 @@ def select_best_neighbour(tab_xm, distances, best_match_selection, GaiaCat=None)
 
     vals, idx_start, count = np.unique(tab_xm[:, 0], return_counts=True, return_index=True)
 
-    best_matches_array = np.zeros((len(vals), 2))  # save the best matches in here
+    best_matches_array = np.zeros((len(vals), 2), dtype=np.int64)  # save the best matches in here
 
     # Call selection function
     for i in range(len(vals)):
@@ -109,7 +110,7 @@ def main():
 
     print(f'Starting single selection run w/ {best_match_selection}')
     print(f"Saving into '{savename}'...")
-    best_matches_array = select_best_neighbour(tab_xm, best_match_selection, savename)
+    best_matches_array = select_best_neighbour(tab_xm, None, best_match_selection)
 
 
 if __name__ == '__main__':

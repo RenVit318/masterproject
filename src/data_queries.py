@@ -95,10 +95,7 @@ def query_gaia_simple_conesearch(mag_lim=None,
         query = query + f"FROM \
                          ( \
                          SELECT *, EPOCH_PROP(ra, dec, parallax, pmra, pmdec, radial_velocity, {epoch_2}, {epoch_1}) as a0  "
-evit/masterproject/masterproject/src/notebooks',
- '/home/rkievit/anaconda3/lib/python39.zip',
- '/home/rkievit/anaconda3/lib/python3.9',
- '/home/rkievit/anaconda3/lib/python3.9/lib-dynload',
+
     query = query + "FROM gaiadr3.gaia_source AS gaia "
 
     if mag_lim is not None:
@@ -235,7 +232,7 @@ def query_extra_data(tab_xm, extra_data_names, cat='gaia'):
     for name in extra_data_names:
         query += f', {cat}.{name}'
     query += f"""
-             FROM gaiadr3.gaia_source as {cat}
+             FROM {cat_name} as {cat}
              JOIN user_{username}.{table_name} AS xm USING (source_id)"""
     job = launch_job(query)
     res = get_data(job)
@@ -243,10 +240,16 @@ def query_extra_data(tab_xm, extra_data_names, cat='gaia'):
     for i, name in enumerate(extra_data_names):
         extra_data[:, 0] = res[name]
 
+    # Just in case the Archive shuffled our matches, reassign all hip and source_id values to match the extra data
+    new_tab_xm = np.zeros((tab_xm.shape[0], 2), dtype=np.int64)
+    new_tab_xm[:, 0] = res['hip']
+    new_tab_xm[:, 1] = res['source_id']
+
     # Remove table    
     Gaia.delete_user_table(table_name)
 
-    return tab_xm, extra_data
+    return new_tab_xm, extra_data
+
 
 def main():
     # gaia_login()
