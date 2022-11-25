@@ -197,7 +197,7 @@ def propagate_error_one(table_name, epoch1, epoch2, save_path='../results'):
     tab.write('../../results/' + table_name + '.fits', format='fits', overwrite=True)
 
 
-def query_extra_data(tab_xm, extra_data_names, cat='gaia'):
+def query_extra_data(tab_xm, extra_data_names, cat='gaia', cat_dpath='../../data/'):
     """Query ancillary data from the archive to be used for the best neighbour selection functions
     Gaia communication is via .fits format so we have to convert np array -> fits and back"""
     import numpy as np
@@ -222,38 +222,51 @@ def query_extra_data(tab_xm, extra_data_names, cat='gaia'):
                 table_name = table_name[0:-2] + f'_{i}'
             i += 1
 
-    # Query data
-    if cat == 'gaia':
-        cat_name = 'gaiadr3.gaia_source'
-        match_on = 'source_id'
-    elif cat == 'hipp':
-        cat_name = 'public.hipparcos_newreduction'
-        match_on = 'hip'
+    try: # Remove table if something goes wrong here
+        # Query data
+        if cat == 'gaia':
+            cat_name = 'gaiadr3.gaia_source'
+            match_on = 'source_id'
+        elif cat == 'hipp':
+            cat_name = 'public.hipparcos_newreduction'
+            match_on = 'hip'
+        else:  # Upload one of the user tables
+            # NOTE: This does not work for a full GaiaBaseCat because it is too big.
+            #data_table = fits.open(f'{cat_dpath}{cat}.fits')[1]
+            data_table = Table.read(f'{cat_dpath}{cat}.fits', format='fits')
+            data_table_name = 'GaiaCat'
+            cat = 'tab'  # For neatness of the query
+            Gaia.upload_table(upload_resource=data_table, table_name=data_table_name)
+            cat_name = f'user_{username}.GaiaCat'
+            match_on = 'source_id'
 
-    query = "SELECT xm.*"
-    for name in extra_data_names:
-        query += f', {cat}.{name}'
-    query += f"""
-             FROM {cat_name} as {cat}
-             JOIN user_{username}.{table_name} AS xm USING ({match_on})"""
-    try:
+        query = "SELECT xm.*"
+        for name in extra_data_names:
+            query += f', {cat}.{name}'
+        query += f"""
+                 FROM {cat_name} as {cat}
+                 JOIN user_{username}.{table_name} AS xm USING ({match_on})"""
+
         job = launch_job(query)
         res = get_data(job)
+
+        extra_data = np.zeros((tab_xm.shape[0], len(extra_data_names)))#, dtype=np.float64)
+        for i, name in enumerate(extra_data_names):
+            extra_data[:, i] = res[name]
+
+        # Just in case the Archive shuffled our matches, reassign all hip and source_id values to match the extra data
+        new_tab_xm = np.zeros((tab_xm.shape[0], 2), dtype=np.int64)
+        new_tab_xm[:, 0] = res['hip']
+        new_tab_xm[:, 1] = res['source_id']
+
     except:
         Gaia.delete_user_table(table_name)
         raise
 
-    extra_data = np.zeros((tab_xm.shape[0], len(extra_data_names)))#, dtype=np.float64)
-    for i, name in enumerate(extra_data_names):
-        extra_data[:, i] = res[name]
-
-    # Just in case the Archive shuffled our matches, reassign all hip and source_id values to match the extra data
-    new_tab_xm = np.zeros((tab_xm.shape[0], 2), dtype=np.int64)
-    new_tab_xm[:, 0] = res['hip']
-    new_tab_xm[:, 1] = res['source_id']
-
-    # Remove table    
+    # Remove tables
     Gaia.delete_user_table(table_name)
+    if cat != 'gaia' and cat != 'hipp':
+        Gaia.delete_user_table(data_table_name)
 
     return new_tab_xm, extra_data
 
