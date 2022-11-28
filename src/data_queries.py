@@ -262,6 +262,8 @@ def query_extra_data(tab_xm, extra_data_names, cat='gaia', cat_dpath='../../data
 
         if not np.array_equal(res['hip'], tab_xm[:, 0]):
             raise ValueError("Crossmatches array was shuffled during transfer with the Archive.")
+        else:
+            print("Post data query array is not shuffled")
 
     except:
         Gaia.delete_user_table(table_name)
