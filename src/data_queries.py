@@ -208,7 +208,7 @@ def query_extra_data(tab_xm, extra_data_names, cat='gaia', cat_dpath='../../data
     table_name = 'xm_table'
     gaia_login()
 
-    # Upload table with a little bit of error catching failsafe
+    # Upload table with error catching failsafe
     i = 0
     while True:
         try:
@@ -255,9 +255,13 @@ def query_extra_data(tab_xm, extra_data_names, cat='gaia', cat_dpath='../../data
             extra_data[:, i] = res[name]
 
         # Just in case the Archive shuffled our matches, reassign all hip and source_id values to match the extra data
-        new_tab_xm = np.zeros((tab_xm.shape[0], 2), dtype=np.int64)
-        new_tab_xm[:, 0] = res['hip']
-        new_tab_xm[:, 1] = res['source_id']
+        # new_tab_xm = np.zeros((tab_xm.shape[0], 2), dtype=np.int64)
+        # new_tab_xm[:, 0] = res['hip']
+        # new_tab_xm[:, 1] = res['source_id']
+        # But it doesn't, and tracking changes to GaiaCat_ID is not doable here, so just error check
+
+        if not np.array_equal(res['hip'], tab_xm[:, 0]):
+            raise ValueError("Crossmatches array was shuffled during transfer with the Archive.")
 
     except:
         Gaia.delete_user_table(table_name)
@@ -268,7 +272,7 @@ def query_extra_data(tab_xm, extra_data_names, cat='gaia', cat_dpath='../../data
     if cat != 'gaia' and cat != 'hipp':
         Gaia.delete_user_table(data_table_name)
 
-    return new_tab_xm, extra_data
+    return tab_xm, extra_data
 
 
 def main():

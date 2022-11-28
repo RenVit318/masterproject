@@ -13,13 +13,13 @@ def nearest(matches, distances):
     """Determines the best match based only on distance
     Requires the input to be: (ID1, ID2, distance)"""
     best_match_idx = np.argmin(distances)
-    return matches[best_match_idx, 0:2]
+    return matches[best_match_idx]
 
 
 def brightest(matches, mag):
     """Determines the best match based only on the brightest object"""
     best_match_idx = np.argmin(mag)
-    return matches[best_match_idx, 0:2]
+    return matches[best_match_idx]
 
 
 def likeliest_position():
@@ -83,7 +83,7 @@ def select_best_neighbour(tab_xm, distances, best_match_selection, GaiaCat=None)
 
     vals, idx_start, count = np.unique(tab_xm[:, 0], return_counts=True, return_index=True)
 
-    best_matches_array = np.zeros((len(vals), 2), dtype=np.int64)  # save the best matches in here
+    best_matches_array = np.zeros((len(vals), 3), dtype=np.int64)  # save the best matches in here
 
     # Call selection function
     for i in range(len(vals)):
@@ -93,7 +93,7 @@ def select_best_neighbour(tab_xm, distances, best_match_selection, GaiaCat=None)
             best_match = select_func(matches, extra_data)
 
         else:
-            best_match = tab_xm[idx_start[i], 0:2]  # get the Hipparcos and Gaia ID
+            best_match = tab_xm[idx_start[i]]
         best_matches_array[i] = best_match
 
     return best_matches_array
@@ -105,16 +105,16 @@ def main():
     best_match_selection = 'brightest'
 
     tab_xm = np.load(r_path + xm_tab_name)
+    print(tab_xm)
     addition_index = xm_tab_name.find('_all')
     savename = xm_tab_name[0:addition_index]
 
     print(f'Starting single selection run w/ {best_match_selection}')
     print(f"Saving into '{savename}'...")
     best_matches_array = select_best_neighbour(tab_xm, None, best_match_selection)
+    print(best_matches_array)
+    #_, res = query_extra_data(best_matches_array, ['phot_g_mean_mag'])
 
-    _, res = query_extra_data(best_matches_array, ['phot_g_mean_mag'])
-    print(best_matches_array.shape)
-    print(res.shape)
 
 
 if __name__ == '__main__':
