@@ -19,10 +19,7 @@ def make_all_catalogues(mag_lim=14, gaia_epoch=2016.0, hipp_epoch=1991.25, batch
     for apply_pm_corr in [True, False]:
         for error_inflation_type in [None, 'Brandt21']:
             # Skip Selection
-            if apply_pm_corr:
-                continue
-            if error_inflation_type is None:
-                continue
+            
             # Make name
             savename = "GaiaBaseCat"
             if apply_pm_corr:
@@ -42,8 +39,8 @@ def make_xm_catalogues():
 
     dpath = '../../data/'
     data_type = 'local'  # local or query_gaia
-    catalogues = ['GaiaBaseCat.fits', 'GaiaBaseCat+PMC.fits', 'GaiaBaseCat+PMC+EIB.fits']
-    conesearch_radii_as = [1, 2, 5, 10]
+    catalogues = ['GaiaBaseCat.fits', 'GaiaBaseCat+PMC.fits', 'GaiaBaseCat+EIB.fits', 'GaiaBaseCat+PMC+EIB.fits']
+    conesearch_radii_as = [1, 2, 3, 5, 10]
 
     for gaia_cat in catalogues:
         for radius in conesearch_radii_as:

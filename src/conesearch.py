@@ -42,8 +42,8 @@ def conesearch_noerr(ra_s, de_s, ra_b, de_b,
             for j in match[0]:
                 xm_table[k, :] = [i, dc_idxs[0][j], theta_ar[j] * 3600.]
                 k += 1
-        if i % 10000 == 0:
-            print(f"{i}/{num_objects}")
+        #if i % 10000 == 0:
+        #    print(f"{i}/{num_objects}")
 
     return xm_table[:k, :]
 
