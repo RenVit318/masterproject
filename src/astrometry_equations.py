@@ -38,10 +38,10 @@ def angular_distance(ra_a, dec_a, ra_b, dec_b, nu=None, unit='radians', nu_thres
 
 
 # TODO: Fill these out
-def predict_mg_bv(hp_mag, b_v):
-    pass
+def predict_G_bv(hp_mag, b_v):
+    return -0.02392 - 0.4069 * b_v + 0.04569 * (b_v**2) - 0.0452 * (b_v**3) + hp_mag
 
-def predict_mg_vi(hp_mag, v_i):
+def predict_G_vi(hp_mag, v_i):
     pass
 
 

@@ -116,6 +116,5 @@ def main():
     #_, res = query_extra_data(best_matches_array, ['phot_g_mean_mag'])
 
 
-
 if __name__ == '__main__':
     main()

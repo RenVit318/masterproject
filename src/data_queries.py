@@ -281,10 +281,10 @@ def main():
     # gaia_login()
     # table = query_gaia_simple_conesearch(back_prop_gaia=True, mag_lim=5)
     # return table
-    #delete_unlabeled_jobs()
-    import numpy as np
-    tab_xm = np.load('../results/crossmatch_1as_all_neighbours.npy')
-    print(query_extra_data(tab_xm, ['pmra', 'pmdec']))
+    delete_unlabeled_jobs()
+    #import numpy as np
+    #tab_xm = np.load('../results/crossmatch_1as_all_neighbours.npy')
+    #print(query_extra_data(tab_xm, ['pmra', 'pmdec']))
 
 
 if __name__ == '__main__':
