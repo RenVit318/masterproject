@@ -60,9 +60,36 @@ def make_xm_catalogues():
             full_run_crossmatch(data_type, data_kwargs, conesearch_params,
                                 save_file=True, savename=savename)
 
+
+def make_marrese_xm_catalogues():
+
+    dpath = '../../data/'
+    data_type = 'local'
+    catalogues = ['GaiaBaseCat+EIB.fits', 'GaiaBaseCat+PMC+EIB.fits']
+    conesearch_radii_as = [1, 2, 5]
+
+    for gaia_cat in catalogues:
+        for radius in conesearch_radii_as:
+            # Crossmatch Parameters
+            data_kwargs = {
+                'gaia_path': dpath + gaia_cat,  # Data Path variables
+                'hipp_path': dpath + 'marrese_hipp_table.fits',
+            }
+            conesearch_params = {
+                'conesearch_radius': radius / 3600.,
+                'best_match_selection': 'all'
+            }
+
+            savename = make_crossmatch_savename(gaia_cat, conesearch_params['conesearch_radius'], basename='marrese_crossmatch')
+            print(f"Starting Crossmatch Iteration: {savename}")
+            full_run_crossmatch(data_type, data_kwargs, conesearch_params,
+                                save_file=True, savename=savename)
+
+
 def main():
-    make_xm_catalogues()
+    make_marrese_xm_catalogues()
 
 
 if __name__ == '__main__':
     main()
+
