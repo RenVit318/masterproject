@@ -36,13 +36,13 @@ def angular_distance(ra_a, dec_a, ra_b, dec_b, nu=None, unit='radians', nu_thres
 
     return theta
 
-
-# TODO: Fill these out
 def predict_G_bv(hp_mag, b_v):
-    return -0.02392 - 0.4069 * b_v + 0.04569 * (b_v**2) - 0.0452 * (b_v**3) + hp_mag
+    """Gaia magnitude prediction based on B-V colour from the Gaia handbook"""
+    return -0.02392 - 0.4069 * b_v + 0.04569 * (b_v**2) - 0.0452 * (b_v**3) + hp_mag, 0.02417
 
 def predict_G_vi(hp_mag, v_i):
-    pass
+    """Gaia magnitude prediction based on V-I colour from the Gaia handbook"""
+    return +0.01546 - 0.4308 * v_i - 0.01872 * (v_i**2) + hp_mag, 0.08181
 
 
 
