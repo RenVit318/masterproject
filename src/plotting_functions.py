@@ -2,7 +2,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 from astropy.io import fits
 from matplotlib.patches import Ellipse
+import matplotlib as mpl
 
+def set_styles():
+    # plt.style.available
+    plt.style.use('default')
+    mpl.rcParams['axes.grid'] = True
+    mpl.rcParams['lines.linewidth'] = 1.5
+    mpl.rcParams['font.size'] = 11
+    mpl.rcParams['font.family'] = 'serif'
+    plt.style.use('seaborn-darkgrid')
 
 def plot_star_square(table, center_coords, box_size,
                      plot_color=False, plot_errors=None,

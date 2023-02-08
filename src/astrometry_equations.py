@@ -44,6 +44,9 @@ def predict_G_vi(hp_mag, v_i):
     """Gaia magnitude prediction based on V-I colour from the Gaia handbook"""
     return +0.01546 - 0.4308 * v_i - 0.01872 * (v_i**2) + hp_mag, 0.08181
 
+def rayleigh(x, sigma):
+    return (x/(sigma**2)) * np.exp(-0.5*((x/sigma)**2.))
+
 
 
 
