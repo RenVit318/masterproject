@@ -127,7 +127,7 @@ def compute_error_normalized_distance(pos1, pos2, unc1, unc2, method='full', coo
         else:
             delta_distance = np.array([x1 - x2, y1 - y2])
             cov_matrix = np.array([[sigma_x1+sigma_x2, sigma_xy1+sigma_xy2], [sigma_xy1+sigma_xy2, sigma_y1+sigma_y2]])
-        cov_matrix_inverse = np.linalg.inv(cov_matrix) # Inverts each of the N matrices individually
+        cov_matrix_inverse = np.linalg.inv(cov_matrix)  # Inverts each of the N matrices individually
 
         # Calculate chi squared
         if len(pos1.shape) > 1:
