@@ -30,17 +30,17 @@ def conesearch_noerr(ra_s, de_s, ra_b, de_b,
     num_objects = ra_s.shape[0]
     xm_table = np.zeros((int(num_objects * 5), 3))
     k = 0
+
+    cs_radius_inflated = 1.1 * conesearch_radius
+    cs_radius_squared = conesearch_radius ** 2.  # for match computation
     for i in range(num_objects):
-        dc_idxs = np.where(
-            np.abs(
-                de_b - de_s[i]) < 1.1 * conesearch_radius)  # Reduce computational load by calculating fewer distances
-        theta_ar = np.sqrt(
-            ((ra_s[i] - ra_b[dc_idxs]) * np.cos(np.radians(de_b[dc_idxs]))) ** 2. + (de_s[i] - de_b[dc_idxs]) ** 2.)
-        match = np.where(theta_ar < conesearch_radius)
+        dc_idxs = np.where(np.abs(de_b - de_s[i]) < cs_radius_inflated)
+        theta_sq_ar = ((ra_s[i] - ra_b[dc_idxs]) * np.cos(np.radians(de_b[dc_idxs]))) ** 2. + (de_s[i] - de_b[dc_idxs]) ** 2.
+        match = np.where(theta_sq_ar < cs_radius_squared)
 
         if len(match[0]) > 0:
             for j in match[0]:
-                xm_table[k, :] = [i, dc_idxs[0][j], theta_ar[j] * 3600.]
+                xm_table[k, :] = [i, dc_idxs[0][j], np.sqrt(theta_sq_ar[j]) * 3600.]
                 k += 1
         #if i % 10000 == 0:
         #    print(f"{i}/{num_objects}")
