@@ -101,15 +101,18 @@ def compute_error_normalized_distance(pos1, pos2, unc1, unc2, method='full', coo
             y1_rad, y2_rad = np.radians(y1/3.6e6), np.radians(y2/3.6e6) # 3600 * 1e3 = 3.6e6
         else:
             raise NotImplementedError(f'unit {unit} not recognized')
-        x1 *= np.cos(y1_rad)
-        x2 *= np.cos(y2_rad)
+        x1_corr = x1 * np.cos(y1_rad)
+        x2_corr = x2 * np.cos(y2_rad)
+    else:
+        x1_corr = x1
+        x2_corr = x2
 
     # Only method that computes D not from the combined distance
     if method == 'directional':
         total_x_unc = np.sqrt(sigma_x1 + sigma_x2)
         total_y_unc = np.sqrt(sigma_y1 + sigma_y2)
 
-        x_dist_norm = (x1 - x2)/total_x_unc
+        x_dist_norm = (x1_corr - x2_corr)/total_x_unc
         y_dist_norm = (y1 - y2)/total_y_unc
 
         return np.sqrt(x_dist_norm**2. + y_dist_norm**2.)
@@ -118,16 +121,20 @@ def compute_error_normalized_distance(pos1, pos2, unc1, unc2, method='full', coo
         # chi^2 = v^T S^-1 v
         # Setup distance vector and covariance matrix
         if len(pos1.shape) > 1:
-            delta_distance = np.stack((np.abs(x1-x2), np.abs(y1-y2)), axis=1)
+            delta_distance = np.stack(((x1_corr-x2_corr), (y1-y2)), axis=1)
 
-            cov_mat_top = np.stack((sigma_x1 + sigma_x2, sigma_xy1 + sigma_xy2), axis=1)
-            cov_mat_bot = np.stack((sigma_xy1 + sigma_xy2, sigma_y1 + sigma_y2), axis=1)
+            cov_mat_top = np.stack((sigma_x1 + sigma_x2, sigma_xy1 * np.sqrt(sigma_x1*sigma_y1) + sigma_xy2 * np.sqrt(sigma_x2*sigma_y2)), axis=1)
+            cov_mat_bot = np.stack((sigma_xy1 * np.sqrt(sigma_x1*sigma_y1) + sigma_xy2 * np.sqrt(sigma_x2*sigma_y2), sigma_y1 + sigma_y2), axis=1)
 
             cov_matrix = np.stack((cov_mat_top, cov_mat_bot), axis=1)
         else:
-            delta_distance = np.array([x1 - x2, y1 - y2])
-            cov_matrix = np.array([[sigma_x1+sigma_x2, sigma_xy1+sigma_xy2], [sigma_xy1+sigma_xy2, sigma_y1+sigma_y2]])
-        cov_matrix_inverse = np.linalg.inv(cov_matrix)  # Inverts each of the N matrices individually
+            delta_distance = np.array([x1_corr - x2_corr, y1 - y2])
+            #print(f'v:{delta_distance}')
+            cov_matrix = np.array([[sigma_x1+sigma_x2, sigma_xy1*np.sqrt(sigma_x1*sigma_y1)+sigma_xy2*np.sqrt(sigma_x2*sigma_y2)], [sigma_xy1*np.sqrt(sigma_x1*sigma_y1)+sigma_xy2*np.sqrt(sigma_x2*sigma_y2), sigma_y1+sigma_y2]])
+            #print(f'S: {cov_matrix}')
+            #cov_matrix = np.array([[sigma_x1+sigma_x2, sigma_xy1+sigma_xy2], [sigma_xy1+sigma_xy2, sigma_y1+sigma_y2]])
+        cov_matrix_inverse = np.linalg.inv(cov_matrix) # Inverts each of the N matrices individually
+        #print(f'S^-1: {cov_matrix_inverse}')
 
         # Calculate chi squared
         if len(pos1.shape) > 1:
@@ -138,11 +145,12 @@ def compute_error_normalized_distance(pos1, pos2, unc1, unc2, method='full', coo
         else:
             vt_Sinverse = np.matmul(delta_distance, cov_matrix_inverse)
             chi_squared = np.matmul(vt_Sinverse, delta_distance)
+            #print(f'chi_squared {chi_squared}')
 
-        return np.sqrt(chi_squared)
+        return np.sqrt(np.abs(chi_squared))
 
     # Start by computing distances
-    distances = np.sqrt((x1 - x2)**2. + (y1 - y2)**2.)
+    distances = np.sqrt((x1_corr - x2_corr)**2. + (y1 - y2)**2.)
 
     if method == 'none':
         return distances
