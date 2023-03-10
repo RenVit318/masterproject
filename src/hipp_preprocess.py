@@ -28,11 +28,13 @@ def mix_hipparcos():
     print('Starting Hip1 Indexing')
     # Match indices on hip because hip1 has 263 more objects than hip2
     hip1_idx = np.full(hip1.shape[0], True)
+    num_unmatched = 0
     for i in range(hip1.shape[0]):
         if hip1['hip'][i] not in hip2['hip']:
             hip1_idx[i] = False
+            num_unmatched += 1
             print(f'No match found for hip1={hip1["hip"][i]}')
-
+    print(f'Could not find a match for {num_unmatched} Hipparcos-1 objects')
     hip2_covar = extract_cov(hip2)[:,0,1]
 
     # Add in hip-id
@@ -40,13 +42,31 @@ def mix_hipparcos():
 
     print('Starting Astrometric Mixing')
     # Mix the astrometric parameters
-    for i in range(len(hip1_mix)):
-        if hip2_mix[i] == 'ra_dec_corr':
-            mixed_data = mix_factor * hip2_covar + (1 - mix_factor) * hip1[hip1_mix[i]][hip1_idx]
-            mix_columns.append(fits.Column(name='ra_dec_corr', format='D', array=mixed_data))
-        else:
-            mixed_data = mix_factor * hip2[hip2_mix[i]] + (1 - mix_factor) * hip1[hip1_mix[i]][hip1_idx]
-            mix_columns.append(fits.Column(name=hip2_mix[i], format='D', array=mixed_data))  # Format D = double precision float
+    for i in range(5):
+        print(hip1_mix[i], hip2_mix[i])
+        mixed_data = mix_factor * hip2[hip2_mix[i]] + (1 - mix_factor) * hip1[hip1_mix[i]][hip1_idx]
+        mix_columns.append(fits.Column(name=hip2_mix[i], format='D', array=mixed_data))  # Format D = double precision float
+
+    print('next step')
+    # Mix uncertainties on astrometric parameters
+    for i in range(5, 10):
+        print(hip1_mix[i], hip2_mix[i])
+        mixed_data = np.sqrt(mix_factor*hip2[hip2_mix[i]] + (1-mix_factor) * hip1[hip1_mix[i]][hip1_idx])
+        mix_columns.append(fits.Column(name=hip2_mix[i], format='D', array=mixed_data))
+
+        if hip2_mix[i] == 'e_ra_rad':
+            e_ra_mix = mixed_data
+        if hip2_mix[i] == 'e_de_rad':
+            e_de_mix = mixed_data
+
+
+    # Mix the correlations via the covariance matrix
+    cov_radec_hip1 = hip1['dera'] * hip1['e_radeg'] * hip1['e_dedeg']
+    #cov_radec_hip2 = hip2['ra_dec_corr'] * hip2['e_ra_rad'] * hip2['e_de_rad']
+    cov_radec_mix = mix_factor * hip2_covar + (1 - mix_factor) * cov_radec_hip1[hip1_idx]
+    rho_radec_mix = cov_radec_mix / (e_ra_mix * e_de_mix)
+
+    mix_columns.append(fits.Column(name='ra_dec_corr', format='D', array=rho_radec_mix))
 
     print('Starting Photometric Extraction')
     # Add in photometric parameters. Choose here to pick them from vL
