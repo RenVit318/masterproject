@@ -15,8 +15,6 @@ from table_functions import extract_sky_positions, convert_to_ids
 from gaia_preprocess import full_preprocess
 from selection_functions import select_best_neighbour
 
-import numpy as np  # Remove
-
 
 def full_run_crossmatch(data_type, data_kwargs, conesearch_params,
                         save_file=False, savename='crossmatch',

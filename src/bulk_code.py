@@ -62,7 +62,7 @@ def make_xm_catalogues():
 
 
 def make_marrese_xm_catalogues():
-
+    """Crossmatch with only the Marrese objects to study statistics on 'good' stars"""
     dpath = '../../data/'
     data_type = 'local'
     catalogues = ['GaiaBaseCat+EIB.fits', 'GaiaBaseCat+PMC+EIB.fits']
@@ -86,8 +86,34 @@ def make_marrese_xm_catalogues():
                                 save_file=True, savename=savename)
 
 
+def full_crossmatch_result():
+    """Crossmatch with all Hipparcos objects to make our own xm table"""
+    dpath = '../../data/'
+    data_type = 'local'  # local or query_gaia
+    catalogues = ['GaiaBaseCat+PMC+EIB.fits']
+    conesearch_radii_as = [2, 3, 5, 10]
+
+    for gaia_cat in catalogues:
+        for radius in conesearch_radii_as:
+
+            # Crossmatch Parameters
+            data_kwargs = {
+                'gaia_path': dpath + gaia_cat,  # Data Path variables
+                'hipp_path': dpath + 'Hipparcos_mix.fits',
+            }
+            conesearch_params = {
+                'conesearch_radius': radius / 3600.,
+                'best_match_selection': 'all'
+            }
+
+            savename = make_crossmatch_savename(gaia_cat, conesearch_params['conesearch_radius'], basename='final_crossmatch')
+            print(f"Starting Crossmatch Iteration: {savename}")
+            full_run_crossmatch(data_type, data_kwargs, conesearch_params,
+                                save_file=True, savename=savename)    
+
 def main():
-    make_marrese_xm_catalogues()
+    #make_marrese_xm_catalogues()
+    full_crossmatch_result()
 
 
 if __name__ == '__main__':
