@@ -92,7 +92,7 @@ def extract_cov(tab):
     sigma = np.zeros((num, 5))
     nobs = tab['Ntr']
     gof = tab['f2']
-    nu = nobs - 5
+    nu = nobs - 5 # There are some stars with n > 5 but this is a good approximation
     Q = nu * (np.sqrt(2. / (9. * nu)) * gof + 1 - (2. / (9. * nu))) ** 3.
     u = np.sqrt(Q / nu)  # confusing naming. Change?
     u_sq = u ** 2.
