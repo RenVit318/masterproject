@@ -91,6 +91,7 @@ def full_crossmatch_result():
     dpath = '../../data/'
     data_type = 'local'  # local or query_gaia
     catalogues = ['GaiaBaseCat+PMC+EIB.fits']
+    hipp_cat = 'Hipparcos_mix.fits'
     conesearch_radii_as = [2, 3, 5, 10]
 
     for gaia_cat in catalogues:
@@ -99,7 +100,9 @@ def full_crossmatch_result():
             # Crossmatch Parameters
             data_kwargs = {
                 'gaia_path': dpath + gaia_cat,  # Data Path variables
-                'hipp_path': dpath + 'Hipparcos_mix.fits',
+                'hipp_path': dpath + hipp_cat,
+                'GaiaCat': gaia_cat,
+                'HippCat': hipp_cat
             }
             conesearch_params = {
                 'conesearch_radius': radius / 3600.,

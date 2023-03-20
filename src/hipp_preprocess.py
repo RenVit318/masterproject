@@ -23,8 +23,6 @@ def mix_hipparcos():
     hip2_mix = ['ra', 'dec', 'pm_ra', 'pm_de', 'plx', 'e_ra_rad', 'e_de_rad', 'e_pm_ra', 'e_pm_de', 'e_plx', 'ra_dec_corr']
     extra_data = ['hp_mag', 'b_v', 'v_i']
 
-
-
     print('Starting Hip1 Indexing')
     # Match indices on hip because hip1 has 263 more objects than hip2
     hip1_idx = np.full(hip1.shape[0], True)
@@ -35,7 +33,7 @@ def mix_hipparcos():
             num_unmatched += 1
             print(f'No match found for hip1={hip1["hip"][i]}')
     print(f'Could not find a match for {num_unmatched} Hipparcos-1 objects')
-    hip2_covar = extract_cov(hip2)[:,0,1]
+    hip2_covar = extract_cov(hip2)[:, 0, 1]
 
     # Add in hip-id
     mix_columns.append(fits.Column(name='hip', format='K', array=hip2['hip']))  # Format K = 64bit int

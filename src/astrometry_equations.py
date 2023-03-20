@@ -1,4 +1,4 @@
-    import numpy as np
+import numpy as np
 
 def sind(x):
     return np.sin(np.radians(x))
@@ -61,7 +61,7 @@ def compute_error_normalized_distance(pos1, pos2, unc1, unc2, method='full', coo
         pos1: Nx2 array containing the [x,y] coordinates of the first object
         pos2: See above, but for the second object
         unc1: Nx3 array containing all (co)variance terms of object 1 necessary for the chosen methods.
-              List as [sigma_x^2, sigma_y^2, sigma_xy], not given values are treated as 0. # Maybe this should be np.nan?
+              List as [sigma_x^2, sigma_y^2, rho_xy], not given values are treated as 0. # Maybe this should be np.nan?
         unc2: See above, but for the second object
         method: Choose from none, simple, directional, full. For descriptions see above
         coordinates: If set to spherical, transforms x |-> x cos(y) for distance calculation to account for spherical effects near poles

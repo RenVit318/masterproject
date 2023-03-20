@@ -18,7 +18,7 @@ from selection_functions import select_best_neighbour
 
 def full_run_crossmatch(data_type, data_kwargs, conesearch_params,
                         save_file=False, savename='crossmatch',
-                        all_selectors=['nearest', 'brightest']):
+                        all_selectors=['nearest', 'likeliest_magnitude', 'likeliest_position']):
     """Execute a complete iteration of the cross-match algorithm with either a locally stored table or a queried table from
        the Gaia Archive. The latter is not really feasible for mag_lim>~12 as processing takes up to 8 hours, store those locally
        Procedure:
@@ -32,7 +32,7 @@ def full_run_crossmatch(data_type, data_kwargs, conesearch_params,
         gaia_login()
         tab_g = full_preprocess(return_cat=True, save_cat=False, **data_kwargs)
         tab_h, _ = read_gaia_hipp_data(**data_kwargs)
-
+    tab_h = tab_h[:100] # ONLY FOR TESTING PURPOSES
     ra_h, de_h = extract_sky_positions(tab_h)
     ra_g, de_g = extract_sky_positions(tab_g, ra_id='ra_prop', de_id='dec_prop')
 
@@ -56,13 +56,13 @@ def full_run_crossmatch(data_type, data_kwargs, conesearch_params,
     if selection_type is not None:
         if selection_type == 'all':  # then loop over all selection methods
             for selector in all_selectors:
-                one_xm_tab = select_best_neighbour(tab_xm_ids, distances, selector)
+                one_xm_tab = select_best_neighbour(tab_xm_ids, distances, selector, **data_kwargs)
 
                 if save_file:
                     save_xm_results(one_xm_tab, f'{savename}_best_neighbour_{selector}')
                     print(f"Cross-Match results saved as {savename}_best_neighbour_{selector}.npy")
         else:
-            one_xm_tab = select_best_neighbour(tab_xm_ids, distances, selection_type)
+            one_xm_tab = select_best_neighbour(tab_xm_ids, distances, selection_type, **data_kwargs)
 
             if save_file:
                 save_xm_results(one_xm_tab, f'{savename}_best_neighbour_{selection_type}')
@@ -89,10 +89,13 @@ def experiment_conesearch():
     # Data
     dpath = '../../data/'
     data_type = 'local'  # local or query_gaia
-    gaia_cat = 'GaiaBaseCat5.fits'
+    gaia_cat = 'GaiaBaseCat+PMC+EIB.fits'
+    hipp_cat = 'Hipparcos_mix.fits'
     data_kwargs = {
         'gaia_path': dpath + gaia_cat,  # Data Path variables
-        'hipp_path': dpath + 'hipp_stars_noerr.fits',
+        'hipp_path': dpath + hipp_cat,
+        'GaiaCat': gaia_cat,
+        'HippCat': hipp_cat,
         'min_g_mag': 4,  # Preprocess variables
         'apply_pm_corr': False,  # Usually aren't going to need these, but just in case
         'error_inflation_type': 'Brandt21',
@@ -109,10 +112,8 @@ def experiment_conesearch():
 
     savename = make_crossmatch_savename(gaia_cat, conesearch_params['conesearch_radius'])
     print(f"Starting full crossmatch run. Saving into basename: {savename}")
-    full_run_crossmatch(data_type, data_kwargs, conesearch_params, save_file=True,
+    full_run_crossmatch(data_type, data_kwargs, conesearch_params, save_file=False,
                         savename=savename)
-
-    ## Analytical functions here ##
 
 
 def main():
