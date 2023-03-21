@@ -29,7 +29,7 @@ def brightest(matches, distances, extra_gaia_data, extra_hipp_data):
 
 def likeliest_magnitude(matches, distances, extra_gaia_data, extra_hipp_data):
     """Predict the Gaia magnitude using Hp_mag and B-V colour and return the smallest difference between G and G_pred"""
-    G = extra_gaia_data
+    G = extra_gaia_data[:,0]
     hp_mag = extra_hipp_data[:, 0]
     b_v = extra_hipp_data[:, 1]
 
@@ -40,10 +40,10 @@ def likeliest_magnitude(matches, distances, extra_gaia_data, extra_hipp_data):
 
 def likeliest_position(matches, distances, extra_gaia_data, extra_hipp_data):
     """Determines the best match based on distance and errors using the error normalized computation code"""
-    pos_gaia = np.array([extra_gaia_data[:, 0], extra_gaia_data[:, 1]]) * 3.6e6 # Convert deg -> mas
-    pos_hipp = np.array([extra_hipp_data[:, 0], extra_hipp_data[:, 1]]) * 3.6e6
-    unc_gaia = np.array([extra_gaia_data[:, 2]**2, extra_gaia_data[:, 3]**2, extra_gaia_data[:, 4]])
-    unc_hipp = np.array([extra_hipp_data[:, 2]**2, extra_hipp_data[:, 3]**2, extra_hipp_data[:, 4]])
+    pos_gaia = np.array([extra_gaia_data[:, 0], extra_gaia_data[:, 1]]).T * 3.6e6 # Convert deg -> mas
+    pos_hipp = np.array([extra_hipp_data[:, 0], extra_hipp_data[:, 1]]).T * 3.6e6
+    unc_gaia = np.array([extra_gaia_data[:, 2]**2, extra_gaia_data[:, 3]**2, extra_gaia_data[:, 4]]).T
+    unc_hipp = np.array([extra_hipp_data[:, 2]**2, extra_hipp_data[:, 3]**2, extra_hipp_data[:, 4]]).T
 
     D = compute_error_normalized_distance(pos_gaia, pos_hipp, unc_gaia, unc_hipp, method='full')
     best_match_idx = np.argmin(D)
@@ -74,7 +74,7 @@ def merge_extra_data(tab_xm, extra_data_names, cat, cat_type=None, dpath='../../
             indexes[i] = int(np.where(full_cat['hip'] == tab_xm[i][0])[0][0])
 
     for i, name in enumerate(extra_data_names):
-        sel_cat[:, i] = full_cat[name][indexes[i]]
+        sel_cat[:, i] = full_cat[name][indexes]
 
     return tab_xm, sel_cat
 

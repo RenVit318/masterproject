@@ -8,9 +8,12 @@
 #
 ############################
 
+import numpy as np
 from data_queries import delete_unlabeled_jobs
 from gaia_preprocess import full_preprocess
 from full_crossmatch import full_run_crossmatch, make_crossmatch_savename
+from selection_functions import select_best_neighbour
+from conesearch import save_xm_results
 
 def make_all_catalogues(mag_lim=14, gaia_epoch=2016.0, hipp_epoch=1991.25, batch_size=int(1e5),
                         read_local=False, data_path=None): # maybe save this file somewhere if ever necessary
@@ -114,9 +117,30 @@ def full_crossmatch_result():
             full_run_crossmatch(data_type, data_kwargs, conesearch_params,
                                 save_file=True, savename=savename)    
 
+def select_best_matches():
+    """Use already existing 'all-neighbour' crossmatches to select the best matches with
+    new selection functions."""
+    rpath = '../results/'
+    xm_basename = 'final_crossmatch+PMC+EIB_'
+    GaiaCat = 'GaiaBaseCat+PMC+EIB.fits'
+    HippCat = 'Hipparcos_mix.fits'
+    conesearch_radii_as = [2, 3, 5, 10]
+    selection_methods = ['likeliest_magnitude', 'likeliest_position']
+    
+    for cs_radius in conesearch_radii_as:
+        cs_basename = f'{xm_basename}{cs_radius}as_'
+        tab_xm = np.load(f'{rpath}{cs_basename}all_neighbours.npy')
+        
+        for method in selection_methods:
+            best_matches = select_best_neighbour(tab_xm, None, method, GaiaCat=GaiaCat, HippCat=HippCat)
+            savename = f'{cs_basename}_best_neighbour_{method}.npy'
+            save_xm_results(best_matches, savename)
+    
+
 def main():
     #make_marrese_xm_catalogues()
-    full_crossmatch_result()
+    #full_crossmatch_result()
+    select_best_matches()
 
 
 if __name__ == '__main__':

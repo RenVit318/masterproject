@@ -32,7 +32,7 @@ def full_run_crossmatch(data_type, data_kwargs, conesearch_params,
         gaia_login()
         tab_g = full_preprocess(return_cat=True, save_cat=False, **data_kwargs)
         tab_h, _ = read_gaia_hipp_data(**data_kwargs)
-    tab_h = tab_h[:100] # ONLY FOR TESTING PURPOSES
+    tab_h = tab_h
     ra_h, de_h = extract_sky_positions(tab_h)
     ra_g, de_g = extract_sky_positions(tab_g, ra_id='ra_prop', de_id='dec_prop')
 
