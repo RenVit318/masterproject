@@ -49,13 +49,18 @@ def mix_hipparcos():
     # Mix uncertainties on astrometric parameters
     for i in range(5, 10):
         print(hip1_mix[i], hip2_mix[i])
-        mixed_data = np.sqrt(mix_factor*hip2[hip2_mix[i]] + (1-mix_factor) * hip1[hip1_mix[i]][hip1_idx])
-        mix_columns.append(fits.Column(name=hip2_mix[i], format='D', array=mixed_data))
+        mixed_data = np.sqrt(mix_factor*hip2[hip2_mix[i]]**2 + (1-mix_factor) * hip1[hip1_mix[i]][hip1_idx]**2)
 
         if hip2_mix[i] == 'e_ra_rad':
+            mixed_data = np.sqrt(mixed_data**2 + 0.6**2) # Reference frame correction
             e_ra_mix = mixed_data
-        if hip2_mix[i] == 'e_de_rad':
+        if hip2_mix[i] == 'e_de_rad':            
+            mixed_data = np.sqrt(mixed_data**2 + 0.6**2)
             e_de_mix = mixed_data
+        if hip2_mix[i] == 'e_pm_ra' or hip2_mix[i] == 'e_pm_de':
+            mixed_data = np.sqrt(mixed_data**2 + 0.25**2)
+
+        mix_columns.append(fits.Column(name=hip2_mix[i], format='D', array=mixed_data))
 
 
     # Mix the correlations via the covariance matrix
