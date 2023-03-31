@@ -17,7 +17,7 @@ import time
 from numba import njit
 
 @njit
-def numba_edr3ToICRF(pmra, pmde, ra, dec, G, table1):
+def numba_edr3ToICRF(pmra, pmde, ra, dec, G, table1, apply_color_correction=False):
     """
     Input: source position , coordinates ,
     and G magnitude from Gaia DR3.
@@ -48,7 +48,10 @@ def numba_edr3ToICRF(pmra, pmde, ra, dec, G, table1):
             corrected_pmra[i] = pmra[i] - pmraCorr / 1000.
             corrected_pmde[i] = pmde[i] - pmdecCorr / 1000.
         #print(f"PM Corr: {i+1}/{pmra.shape[0]}", end='\r')
-        
+    if apply_color_correction:
+        corrected_pmra = np.sqrt(corrected_pmra**2 + 10e-3**2)
+        corrected_pmde = np.sqrt(corrected_pmde**2 + 10e-3**2)        
+
     return corrected_pmra, corrected_pmde
 
 
@@ -87,7 +90,7 @@ def error_inflation(table, inflated_errors_array=['ra_error', 'dec_error', 'para
 
 
 def full_preprocess(mag_lim=14, gaia_epoch=2016., hipp_epoch=1991.25, batch_size=None, read_local=False, data_path=None,
-                    apply_pm_corr=False, error_inflation_type=None,
+                    apply_pm_corr=False, error_inflation_type=None, apply_color_correction=False,
                     return_cat=False, save_cat=True, savename='GaiaCat_noname'):
     """Completely preprocess the Gaia data from the Archive, into something usable for 
     crossmatching with Hipparcos

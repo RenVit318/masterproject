@@ -11,6 +11,7 @@
 import numpy as np
 from data_queries import delete_unlabeled_jobs
 from gaia_preprocess import full_preprocess
+from hipp_preprocess import mix_hipparcos
 from full_crossmatch import full_run_crossmatch, make_crossmatch_savename
 from selection_functions import select_best_neighbour
 from conesearch import save_xm_results
@@ -137,10 +138,24 @@ def select_best_matches():
             save_xm_results(best_matches, savename)
     
 
+def make_final_cats():
+    """Make the final Gaia Base Cat including everything from Brandt21 and Cantat-Gaudin+21,
+    and the final Hipparcos mix catalogue, where we include all known uncertainties."""
+    # 1. GaiaCat
+    full_preprocess(mag_lim=14, gaia_epoch=2016., hipp_epoch=1991.25, batch_size=int(1e5), read_local=False,
+                    data_path=None, apply_pm_corr=True, error_inflation_type='Brandt21', apply_color_correction=True,
+                    return_cat=False, save_cat=True, savename='GaiaBaseCat_all')
+
+    #2. Hipparcos_mix
+    mix_hipparcos() # oops sligthly less well documented :(
+    
+
+
 def main():
     #make_marrese_xm_catalogues()
     #full_crossmatch_result()
-    select_best_matches()
+    #select_best_matches()
+    make_final_cats()
 
 
 if __name__ == '__main__':
