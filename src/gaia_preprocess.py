@@ -96,7 +96,7 @@ def full_preprocess(mag_lim=14, gaia_epoch=2016., hipp_epoch=1991.25, batch_size
     crossmatching with Hipparcos
     1. Extract all proper Gaia data with M<mag_lim
     2. Apply PM correction (Cantat-Gaudin & Brandt 2021)
-    3. Apply Error Inflation (Brandt 2021, ..)
+    3. Apply Error Inflation (Brandt 2021, ..)  
     3. Batch data for processing speed
     4. Apply backpropagation in the archive
     5. Create complete table"""
