@@ -23,7 +23,6 @@ def get_hipp_gaia_data(crossmatch_idxs, HippCat='Hipparcos_mix', GaiaCat='GaiaBa
     return pos_hipp_table_full, pos_gaia_table_full
 
 
-
 def make_table():
     dpath = '../../data/'
     rpath = '../results/'
@@ -37,7 +36,10 @@ def make_table():
     pos_xm = np.load(rpath+'final_crossmatch+PMC+EIB_10as__best_neighbour_likeliest_position.npy')
     mag_xm = np.load(rpath+'final_crossmatch+PMC+EIB_10as__best_neighbour_likeliest_magnitude.npy')
     nea_xm = np.load(rpath+'final_crossmatch+PMC+EIB_10as_best_neighbour_nearest.npy')
-
+    print(np.array_equal(pos_xm[:,0], mag_xm[:,0]))
+    print(np.array_equal(pos_xm[:,0], nea_xm[:,0]))
+    print(np.array_equal(mag_xm[:,0], nea_xm[:,0]))
+    input()
     hipp_pos, gaia_pos = get_hipp_gaia_data(pos_xm)
     hipp_mag, gaia_mag = get_hipp_gaia_data(mag_xm)
     hipp_nea, gaia_nea = get_hipp_gaia_data(nea_xm)
@@ -59,7 +61,7 @@ def make_table():
     print('Starting ID Extraction..')
     table_columns = []
     # Get sorting indices based on hip such that we have all hip indices in order
-    # Get the indices separtately because we have to save gaia indices separately
+    # Get the indices separately because we have to save gaia indices separately
     hip = np.array([])
     gaiaid = np.array([])
     for i in range(Nsel):
