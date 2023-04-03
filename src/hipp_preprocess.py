@@ -76,7 +76,7 @@ def mix_hipparcos():
     for i in range(len(extra_data)):
         mix_columns.append(fits.Column(name=extra_data[i], format='D', array=hip2[extra_data[i]]))
 
-    print('Starting HDUList Creation and Saving')
+x    print('Starting HDUList Creation and Saving')
     table_hdu = fits.BinTableHDU.from_columns(mix_columns)
 
     table_hdu.writeto('../../data/Hipparcos_mix.fits', overwrite=True)
