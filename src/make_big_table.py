@@ -26,8 +26,8 @@ def get_hipp_gaia_data(crossmatch_idxs, HippCat='Hipparcos_mix', GaiaCat='GaiaBa
 def make_table():
     dpath = '../../data/'
     rpath = '../results/'
-    GaiaCat = 'GaiaBaseCat_all.fits'
-    HippCat = 'Hipparcos_mix.fits'
+    GaiaCat = 'GaiaBaseCat_all'
+    HippCat = 'Hipparcos_mix'
     
     # Fields that we want to add
     fieldnames = ['G_Gpred', 'Hip_BV', 'Gaia_BpRp', 'D', 'distance', 'delta_pm_alpha', 'delta_pm_dec', 'delta_pm_tot']
@@ -36,13 +36,10 @@ def make_table():
     pos_xm = np.load(rpath+'final_crossmatch+PMC+EIB_10as__best_neighbour_likeliest_position.npy')
     mag_xm = np.load(rpath+'final_crossmatch+PMC+EIB_10as__best_neighbour_likeliest_magnitude.npy')
     nea_xm = np.load(rpath+'final_crossmatch+PMC+EIB_10as_best_neighbour_nearest.npy')
-    print(np.array_equal(pos_xm[:,0], mag_xm[:,0]))
-    print(np.array_equal(pos_xm[:,0], nea_xm[:,0]))
-    print(np.array_equal(mag_xm[:,0], nea_xm[:,0]))
-    input()
-    hipp_pos, gaia_pos = get_hipp_gaia_data(pos_xm)
-    hipp_mag, gaia_mag = get_hipp_gaia_data(mag_xm)
-    hipp_nea, gaia_nea = get_hipp_gaia_data(nea_xm)
+
+    hipp_pos, gaia_pos = get_hipp_gaia_data(pos_xm, HippCat=HippCat, GaiaCat=GaiaCat)
+    hipp_mag, gaia_mag = get_hipp_gaia_data(mag_xm, HippCat=HippCat, GaiaCat=GaiaCat)
+    hipp_nea, gaia_nea = get_hipp_gaia_data(nea_xm, HippCat=HippCat, GaiaCat=GaiaCat)
     ###
 
     xm_tabs = [pos_xm, mag_xm, nea_xm]
@@ -114,7 +111,7 @@ def make_table():
 
     # Now turn all these tables into fits columns (can we do this in one big go from a ndarray?
     for j in range(table_data.shape[1]):
-        table_columns.append(fits.Column(name=fieldnames[j], format='D', array=table_data[:,j]))
+        table_columns.append(fits.Column(name=fieldnames[j], format='D', array=table_data[:,j][sort_idxs]))
 
     print('Starting HDUList Creation and Saving..')
     table_hdu = fits.BinTableHDU.from_columns(table_columns)
