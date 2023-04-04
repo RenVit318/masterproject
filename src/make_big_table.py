@@ -30,8 +30,13 @@ def make_table():
     HippCat = 'Hipparcos_mix'
     
     # Fields that we want to add
-    fieldnames = ['G_Gpred', 'Hip_BV', 'Gaia_BpRp', 'D', 'distance', 'delta_pm_alpha', 'delta_pm_dec', 'delta_pm_tot']
-    
+    # small table
+    #fieldnames = ['G_Gpred', 'Hip_BV', 'Gaia_BpRp', 'D', 'distance', 'delta_pm_alpha', 'delta_pm_dec', 'delta_pm_tot']
+    #savename = 'all_results_10as_small'
+    # big table
+    fieldnames = ['method', 'G_Gpred', 'Hp_mag', 'G_mag', 'Hip_BV', 'Gaia_BpRp', 'D', 'distance', 'delta_pm_alpha', 'delta_pm_dec', 'delta_pm_tot']
+    savename = 'all_results_10as_complete'
+
     # GET ALL DATA #
     pos_xm = np.load(rpath+'final_crossmatch+PMC+EIB_10as__best_neighbour_likeliest_position.npy')
     mag_xm = np.load(rpath+'final_crossmatch+PMC+EIB_10as__best_neighbour_likeliest_magnitude.npy')
@@ -102,9 +107,15 @@ def make_table():
                     sub_tab[:, j] = np.abs(hipp['pm_de'] - gaia['pmdec_prop'])
                 case 'delta_pm_tot':
                     sub_tab[:, j] = np.sqrt((hipp['pm_ra'] - gaia['pmra_prop'])**2 + (hipp['pm_de'] - gaia['pmdec_prop'])**2)
+                case 'method':
+                    sub_tab[:,j] = i
                 # maybe just use the catalogue names for everything below and assign them all automatically
+                case 'Hp_mag':
+                    sub_tab[:, j] = hipp['hp_mag']
                 case 'Hip_BV':
                     sub_tab[:, j] = hipp['b_v']
+                case 'G_mag':
+                    sub_tab[:, j] = gaia['phot_g_mean_mag']
                 case 'Gaia_BpRp':
                     sub_tab[:, j] = gaia['bp_rp']
             print(table_data)     
@@ -116,7 +127,7 @@ def make_table():
     print('Starting HDUList Creation and Saving..')
     table_hdu = fits.BinTableHDU.from_columns(table_columns)
 
-    table_hdu.writeto(rpath+'all_results_10as.fits', overwrite=True)
+    table_hdu.writeto(rpath+savename+'.fits', overwrite=True)
 
     
 def main():
