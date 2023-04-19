@@ -197,7 +197,8 @@ def propagate_error_one(table_name, epoch1, epoch2, save_path='../results'):
     tab.write('../../results/' + table_name + '.fits', format='fits', overwrite=True)
 
 
-def query_extra_data(tab_xm, extra_data_names, cat='gaia', cat_dpath='../../data/'):
+def query_extra_data(tab_xm, extra_data_names, cat='gaia', cat_dpath='../../data/',
+                     return_strings=False):
     """Query ancillary data from the archive to be used for the best neighbour selection functions
     Gaia communication is via .fits format so we have to convert np array -> fits and back"""
     import numpy as np
@@ -230,6 +231,9 @@ def query_extra_data(tab_xm, extra_data_names, cat='gaia', cat_dpath='../../data
         elif cat == 'hipp':
             cat_name = 'public.hipparcos_newreduction'
             match_on = 'hip'
+        elif cat == 'hipp1':
+            cat_name = 'public.hipparcos'
+            match_on = 'hip'
         else:  # Upload one of the user tables
             # NOTE: This does not work for a full GaiaBaseCat because it is too big.
             #data_table = fits.open(f'{cat_dpath}{cat}.fits')[1]
@@ -249,10 +253,12 @@ def query_extra_data(tab_xm, extra_data_names, cat='gaia', cat_dpath='../../data
 
         job = launch_job(query)
         res = get_data(job)
-
-        extra_data = np.zeros((tab_xm.shape[0], len(extra_data_names)))#, dtype=np.float64)
-        for i, name in enumerate(extra_data_names):
-            extra_data[:, i] = res[name]
+        if return_strings:
+            extra_data = res
+        else:
+            extra_data = np.zeros((tab_xm.shape[0], len(extra_data_names)))#, dtype=np.float64)
+            for i, name in enumerate(extra_data_names):
+                extra_data[:, i] = res[name]
 
         # Just in case the Archive shuffled our matches, reassign all hip and source_id values to match the extra data
         # new_tab_xm = np.zeros((tab_xm.shape[0], 2), dtype=np.int64)
@@ -271,7 +277,7 @@ def query_extra_data(tab_xm, extra_data_names, cat='gaia', cat_dpath='../../data
 
     # Remove tables
     Gaia.delete_user_table(table_name)
-    if cat != 'gaia' and cat != 'hipp':
+    if cat not in ['gaia', 'hipp', 'hipp1']:
         Gaia.delete_user_table(data_table_name)
 
     return tab_xm, extra_data

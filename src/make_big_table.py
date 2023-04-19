@@ -2,6 +2,7 @@ import numpy as np
 from astropy.io import fits
 import copy
 from astrometry_equations import predict_G_bv, compute_error_normalized_distance
+from data_queries import query_extra_data
 
 def get_hipp_gaia_data(crossmatch_idxs, HippCat='Hipparcos_mix', GaiaCat='GaiaBaseCat+PMC+EIB', dpath='../../data/'):
     # Hipparcos - Gaia indexes of the cross match 
@@ -23,6 +24,49 @@ def get_hipp_gaia_data(crossmatch_idxs, HippCat='Hipparcos_mix', GaiaCat='GaiaBa
     return pos_hipp_table_full, pos_gaia_table_full
 
 
+def get_delta_logG(xm, 
+                   lumclass_logG_dict = { # Based on slides. Find real citation!
+                        'I': -0.5,
+                        'II': 0.5,
+                        'III': 1.5,
+                        'IV': 3.,
+                        'V': 4.5,
+                        'VI': 6.,
+                        'VII': 7.5 }): # PROBABLY NOT GOOD!
+    """Compute the difference in log Surface Gravity [cgs] between the Hipparcos and Gaia matches. This is a proxy
+    for the luminosity class of an object. The Gaia catalogue directly reports this number based on ..., for the 
+    Hipparcos catalogue we need to do some work and make some assumptions"""
+    from MeanStars import MeanStars
+    ms = MeanStars()
+    # Gaia              
+    _, logG_gaia = query_extra_data(xm, ['logg_gspphot'])
+    # assume unclassified objects are MS stars/dwarfs
+    logG_gaia[np.isnan(logG_gaia)] = lumclass_logG_dict['V'] 
+    # Hipp 
+    _, tab_hipp = query_extra_data(xm, ['sptype'], cat='hipp1', return_strings=True)
+    spectype_hipp = tab_hipp['sptype']
+    logG_hipp = np.zeros(len(spectype_hipp), dtype=np.float64)
+    # annoyingly match_spec only works on one string at a time.
+    for i in range(len(spectype_hipp)):
+        
+        SpecType = ms.matchSpecType(spectype_hipp[i])
+        if SpecType is None: # No Spectral Type. Assume it is a dwarf
+            logG_hipp[i] = lumclass_logG_dict['V']
+        elif len(SpecType) > 3: # There were multiple spectral types. None in our dataset
+            logG_sum = 0
+            for i in range(2, len(SpecType), 3): # select each third element and take the mean
+                logG_sum += lumclass_logG_dict[SpecType[i]]
+            logG_hipp[i] = logG_sum / (len(SpecType)/3)
+
+        else: # Normally behaving object
+            _, _, lclass = SpecType
+            logG_hipp[i] = lumclass_logG_dict[lclass]
+
+    print(logG_gaia, logG_hipp)
+    print(logG_gaia.shape, logG_hipp.shape)
+    return logG_gaia.T - logG_hipp # Transpose because logG_gaia is vertical
+
+
 def make_table():
     dpath = '../../data/'
     rpath = '../results/'
@@ -34,7 +78,7 @@ def make_table():
     #fieldnames = ['G_Gpred', 'Hip_BV', 'Gaia_BpRp', 'D', 'distance', 'delta_pm_alpha', 'delta_pm_dec', 'delta_pm_tot']
     #savename = 'all_results_10as_small'
     # big table
-    fieldnames = ['method', 'G_Gpred', 'Hp_mag', 'G_mag', 'Hip_BV', 'Gaia_BpRp', 'D', 'distance', 'delta_pm_alpha', 'delta_pm_dec', 'delta_pm_tot']
+    fieldnames = ['method', 'G_Gpred', 'Hp_mag', 'G_mag', 'Hip_BV', 'Gaia_BpRp', 'D', 'distance', 'delta_pm_alpha', 'delta_pm_dec', 'delta_pm_tot', 'Delta_LogG']
     savename = 'all_results_10as_complete'
 
     # GET ALL DATA #
@@ -89,7 +133,7 @@ def make_table():
                 case 'G_Gpred':
                     G_pred, _ = predict_G_bv(hipp['hp_mag'], hipp['b_v'])
                     sub_tab[:, j] = gaia['phot_g_mean_mag'] - G_pred
-                case 'D':
+                case 'D':   
                     pos_hipp = np.array([hipp['ra'], hipp['dec']]).T * 3.6e6
                     pos_gaia = np.array([gaia['ra_prop'], gaia['dec_prop']]).T * 3.6e6
                     unc_hipp = np.array([hipp['e_ra_rad']**2, hipp['e_de_rad']**2, hipp['ra_dec_corr']]).T
@@ -109,6 +153,8 @@ def make_table():
                     sub_tab[:, j] = np.sqrt((hipp['pm_ra'] - gaia['pmra_prop'])**2 + (hipp['pm_de'] - gaia['pmdec_prop'])**2)
                 case 'method':
                     sub_tab[:,j] = i
+                case 'Delta_LogG':
+                    sub_tab[:,j] = get_delta_logG(xm_tabs[i])
                 # maybe just use the catalogue names for everything below and assign them all automatically
                 case 'Hp_mag':
                     sub_tab[:, j] = hipp['hp_mag']
@@ -132,6 +178,8 @@ def make_table():
     
 def main():
     make_table()
+    #pos_xm = np.load('../results/final_crossmatch+PMC+EIB_10as__best_neighbour_likeliest_position.npy')
+    #get_delta_logG(pos_xm)
 
 
 if __name__ == '__main__':
