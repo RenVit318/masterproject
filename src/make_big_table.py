@@ -31,8 +31,8 @@ def get_delta_logG(xm,
                         'III': 1.5,
                         'IV': 3.,
                         'V': 4.5,
-                        'VI': 6.,
-                        'VII': 7.5 }): # PROBABLY NOT GOOD!
+                        'VI': 5.5,
+                        'VII': 8. }): # PROBABLY NOT GOOD!
     """Compute the difference in log Surface Gravity [cgs] between the Hipparcos and Gaia matches. This is a proxy
     for the luminosity class of an object. The Gaia catalogue directly reports this number based on ..., for the 
     Hipparcos catalogue we need to do some work and make some assumptions"""
