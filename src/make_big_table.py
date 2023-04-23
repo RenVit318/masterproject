@@ -41,6 +41,7 @@ def get_delta_logG(xm,
     # Gaia              
     _, logG_gaia = query_extra_data(xm, ['logg_gspphot'])
     # assume unclassified objects are MS stars/dwarfs
+    print(len( logG_gaia[np.isnan(logG_gaia)]))
     logG_gaia[np.isnan(logG_gaia)] = lumclass_logG_dict['V'] 
     # Hipp 
     _, tab_hipp = query_extra_data(xm, ['sptype'], cat='hipp1', return_strings=True)
@@ -64,7 +65,8 @@ def get_delta_logG(xm,
 
     print(logG_gaia, logG_hipp)
     print(logG_gaia.shape, logG_hipp.shape)
-    return logG_gaia.T - logG_hipp # Transpose because logG_gaia is vertical
+    #return logG_gaia.T - logG_hipp # Transpose because logG_gaia is vertical
+    return logG_gaia, logG_hipp
 
 
 def make_table():
@@ -177,9 +179,9 @@ def make_table():
 
     
 def main():
-    make_table()
-    #pos_xm = np.load('../results/final_crossmatch+PMC+EIB_10as__best_neighbour_likeliest_position.npy')
-    #get_delta_logG(pos_xm)
+    #make_table()
+    pos_xm = np.load('../results/final_crossmatch+PMC+EIB_10as__best_neighbour_likeliest_position.npy')
+    get_delta_logG(pos_xm)
 
 
 if __name__ == '__main__':
