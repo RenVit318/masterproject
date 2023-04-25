@@ -8,10 +8,12 @@ def get_hipp_gaia_data(crossmatch_idxs, HippCat='Hipparcos_mix', GaiaCat='GaiaBa
     # Hipparcos - Gaia indexes of the cross match 
     hipp_cat = fits.open(f'{dpath}{HippCat}.fits')[1].data
     gaia_cat = fits.open(f'{dpath}{GaiaCat}.fits')[1].data
+    print(gaia_cat['source_id'])
     print('start gaia')
     # Make a table matching the XM order containing all propagated Gaia astrometry
     pos_gaia_table_full = copy.deepcopy(gaia_cat)
     pos_gaia_table_full = pos_gaia_table_full[crossmatch_idxs[:,2]]
+    print(pos_gaia_table_full['source_id'])
     print('start hipp')
     # Indexing this table is slightly more work because we do not have the table idxs stored
     pos_hipp_table_full = copy.deepcopy(hipp_cat)
@@ -80,22 +82,31 @@ def make_table():
     #fieldnames = ['G_Gpred', 'Hip_BV', 'Gaia_BpRp', 'D', 'distance', 'delta_pm_alpha', 'delta_pm_dec', 'delta_pm_tot']
     #savename = 'all_results_10as_small'
     # big table
-    fieldnames = ['method', 'G_Gpred', 'Hp_mag', 'G_mag', 'Hip_BV', 'Gaia_BpRp', 'D', 'distance', 'delta_pm_alpha', 'delta_pm_dec', 'delta_pm_tot', 'Delta_LogG']
-    savename = 'all_results_10as_complete'
+    fieldnames = ['method', 'G_Gpred', 'Hp_mag', 'G_mag', 'Hip_BV', 'Gaia_BpRp', 'D', 'distance', 'delta_pm_alpha', 'delta_pm_dec', 'delta_pm_tot', 'delta_plx']
+    savename = 'all_results_10as_complete_all_neighbours'
+    select_funcs = False
 
     # GET ALL DATA #
-    pos_xm = np.load(rpath+'final_crossmatch+PMC+EIB_10as__best_neighbour_likeliest_position.npy')
-    mag_xm = np.load(rpath+'final_crossmatch+PMC+EIB_10as__best_neighbour_likeliest_magnitude.npy')
-    nea_xm = np.load(rpath+'final_crossmatch+PMC+EIB_10as_best_neighbour_nearest.npy')
+    if select_funcs:
+        pos_xm = np.load(rpath+'final_crossmatch+PMC+EIB_10as__best_neighbour_likeliest_position.npy')
+        mag_xm = np.load(rpath+'final_crossmatch+PMC+EIB_10as__best_neighbour_likeliest_magnitude.npy')
+        nea_xm = np.load(rpath+'final_crossmatch+PMC+EIB_10as_best_neighbour_nearest.npy')
 
-    hipp_pos, gaia_pos = get_hipp_gaia_data(pos_xm, HippCat=HippCat, GaiaCat=GaiaCat)
-    hipp_mag, gaia_mag = get_hipp_gaia_data(mag_xm, HippCat=HippCat, GaiaCat=GaiaCat)
-    hipp_nea, gaia_nea = get_hipp_gaia_data(nea_xm, HippCat=HippCat, GaiaCat=GaiaCat)
-    ###
+        hipp_pos, gaia_pos = get_hipp_gaia_data(pos_xm, HippCat=HippCat, GaiaCat=GaiaCat)
+        hipp_mag, gaia_mag = get_hipp_gaia_data(mag_xm, HippCat=HippCat, GaiaCat=GaiaCat)
+        hipp_nea, gaia_nea = get_hipp_gaia_data(nea_xm, HippCat=HippCat, GaiaCat=GaiaCat)
+        ###
 
-    xm_tabs = [pos_xm, mag_xm, nea_xm]
-    hipp_dat = [hipp_pos, hipp_mag, hipp_nea]
-    gaia_dat = [gaia_pos, gaia_mag, gaia_nea]
+        xm_tabs = [pos_xm, mag_xm, nea_xm]
+        hipp_dat = [hipp_pos, hipp_mag, hipp_nea]
+        gaia_dat = [gaia_pos, gaia_mag, gaia_nea]
+    else:
+        xm = np.load(rpath+'final_crossmatch+PMC+EIB_10as_all_neighbours.npy')
+        hipp, gaia = get_hipp_gaia_data(xm, HippCat=HippCat, GaiaCat=GaiaCat)
+
+        xm_tabs = [xm]
+        hipp_dat = [hipp]
+        gaia_dat = [gaia]
 
     Nsel = len(xm_tabs)
     # Use these to place the right data in the right place of the table
@@ -110,16 +121,18 @@ def make_table():
     table_columns = []
     # Get sorting indices based on hip such that we have all hip indices in order
     # Get the indices separately because we have to save gaia indices separately
-    hip = np.array([])
-    gaiaid = np.array([])
+    hip = np.array([], dtype=np.int64)
+    gaiaid = np.array([], dtype=np.int64)
     for i in range(Nsel):
         hip = np.append(hip, xm_tabs[i][:,0])
         gaiaid = np.append(gaiaid, xm_tabs[i][:,1])
     sort_idxs = np.argsort(hip)
 
-    table_columns.append(fits.Column(name='hip_id', format='K', array=hip[sort_idxs]))
-    table_columns.append(fits.Column(name='gaia source_id', format='K', array=gaiaid[sort_idxs]))
-
+    print(gaiaid[sort_idxs][0])
+    table_columns.append(fits.Column(name='hip_id', format='i8', array=hip[sort_idxs]))
+    table_columns.append(fits.Column(name='gaia source_id', format='i8', array=gaiaid[sort_idxs]))
+#    print(table_columns[1].data)
+ #   input()
     table_data = np.zeros((hip.shape[0], len(fieldnames)), dtype=np.float64)
     
     print('Starting Parameter Extraction..')
@@ -153,8 +166,8 @@ def make_table():
                     sub_tab[:, j] = np.abs(hipp['pm_de'] - gaia['pmdec_prop'])
                 case 'delta_pm_tot':
                     sub_tab[:, j] = np.sqrt((hipp['pm_ra'] - gaia['pmra_prop'])**2 + (hipp['pm_de'] - gaia['pmdec_prop'])**2)
-                case '': # Parallax
-                    pass
+                case 'delta_plx': # Parallax
+                    sub_tab[:, j] = gaia['parallax'] - hipp['plx']
                 case 'method':
                     sub_tab[:,j] = i
                 case 'Delta_LogG':
@@ -181,9 +194,9 @@ def make_table():
 
     
 def main():
-    #make_table()
-    pos_xm = np.load('../results/final_crossmatch+PMC+EIB_10as__best_neighbour_likeliest_position.npy')
-    get_delta_logG(pos_xm)
+    make_table()
+    #pos_xm = np.load('../results/final_crossmatch+PMC+EIB_10as__best_neighbour_likeliest_position.npy')
+    #get_delta_logG(pos_xm)
 
 
 if __name__ == '__main__':
