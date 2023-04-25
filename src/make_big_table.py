@@ -153,6 +153,8 @@ def make_table():
                     sub_tab[:, j] = np.abs(hipp['pm_de'] - gaia['pmdec_prop'])
                 case 'delta_pm_tot':
                     sub_tab[:, j] = np.sqrt((hipp['pm_ra'] - gaia['pmra_prop'])**2 + (hipp['pm_de'] - gaia['pmdec_prop'])**2)
+                case '': # Parallax
+                    pass
                 case 'method':
                     sub_tab[:,j] = i
                 case 'Delta_LogG':

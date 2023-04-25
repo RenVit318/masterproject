@@ -120,6 +120,31 @@ def query_gaia_preprocess(mag_lim):
     return get_data(job)
 
 
+def query_gaia_zpcorr(gaia_ids, table_name='source_id_zp'):
+    """Query the 5 parameters required to compute the zero point correction from Lindegren et al. (2021)"""
+    import numpy as np
+    gaia_login()
+
+    table = Table([gaia_ids], names=['source_id']) 
+    Gaia.upload_table(upload_resource=table, table_name=table_name)
+    
+    try:
+        query = f"""SELECT source_id, parallax, phot_g_mean_mag, nu_eff_used_in_astrometry, pseudocolour, ecl_lat, astrometric_params_solved
+                    FROM gaiadr3.gaia_source as gaia
+                    JOIN user_{username}.{table_name} USING (source_id)"""
+        job = launch_job(query)
+        data = get_data(job)
+        Gaia.delete_user_table(table_name)            
+    
+        # Check if we are not shuffled
+        if not np.array_equal(data['source_id'], gaia_ids):
+            raise ValueError("Crossmatches array was shuffled during transfer with the Archive.")
+    
+        return data
+    except: # remove user table if smth breaks
+        Gaia.delete_user_table(table_name)
+        raise
+
 def propagate_batches_error(batches, epoch1, epoch2, num_runs=2):
     """Multithreading solution to propagating Gaia positions and errors. Full runtime of 16e6 entries takes >2h
     But by batching we reduce batch runtime to only ~few minutes

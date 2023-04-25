@@ -12,7 +12,7 @@ import numpy as np
 from astropy.table import Table, vstack
 from astrometry_equations import sind, cosd
 from table_functions import extract_sky_positions, extract_proper_motions, batch_table, read_tables
-from data_queries import gaia_login, query_gaia_preprocess, propagate_batches_error, delete_unlabeled_jobs
+from data_queries import gaia_login, query_gaia_preprocess, propagate_batches_error, delete_unlabeled_jobs, query_gaia_zpcorr
 import time
 from numba import njit
 
@@ -88,18 +88,37 @@ def error_inflation(table, inflated_errors_array=['ra_error', 'dec_error', 'para
 
     return table
 
+def zero_point_corr(gaia_ids):
+    """Applies the zero point correction to the parallax as discussed by Lindegren+21 and implemented
+    by them in the gaiadr3-zeropoint code"""
+    from zero_point import zpt
+    zpt.load_tables()
+
+    # query correct data
+    tab = query_gaia_zpcorr(gaia_ids)
+    mask = np.isfinite(tab['parallax'] ) # only apply plx correction if we have plx information
+    zp_corr = zpt.get_zpt(tab['phot_g_mean_mag'][mask],
+                          tab['nu_eff_used_in_astrometry'][mask],
+                          tab['pseudocolour'][mask],
+                          tab['ecl_lat'][mask],
+                          tab['astrometric_params_solved'][mask])
+    tab['parallax'][mask] += zp_corr
+    return tab['parallax']
+
+
 
 def full_preprocess(mag_lim=14, gaia_epoch=2016., hipp_epoch=1991.25, batch_size=None, read_local=False, data_path=None,
-                    apply_pm_corr=False, error_inflation_type=None, apply_color_correction=False,
+                    apply_pm_corr=False, error_inflation_type=None, apply_color_correction=False, apply_zp_corr=False,
                     return_cat=False, save_cat=True, savename='GaiaCat_noname'):
     """Completely preprocess the Gaia data from the Archive, into something usable for 
     crossmatching with Hipparcos
     1. Extract all proper Gaia data with M<mag_lim
     2. Apply PM correction (Cantat-Gaudin & Brandt 2021)
-    3. Apply Error Inflation (Brandt 2021, ..)  
-    3. Batch data for processing speed
-    4. Apply backpropagation in the archive
-    5. Create complete table"""
+    3. Apply zero-point parallax correction (Lindegren et al. 2021)
+    4. Apply Error Inflation (Brandt 2021, ..)   
+    5. Batch data for processing speed
+    6. Apply backpropagation in the archive
+    7. Create complete table"""
 
     gaia_login()
     t1 = time.time()
@@ -125,27 +144,33 @@ def full_preprocess(mag_lim=14, gaia_epoch=2016., hipp_epoch=1991.25, batch_size
         all_gaia_maglim['pmde'] = pmde_corr
         print(f"Proper Motion Correction Applied. Time elapsed {time.time() - t2:.0f}s")
 
-    # 3.
+    #3.
     t3 = time.time()
-    if error_inflation_type is not None:
-        all_gaia_maglim = error_inflation(all_gaia_maglim, inflation_type=error_inflation_type)
-        print(f"Error Inflation with Method {error_inflation_type} Applied. Time elapsed {time.time() - t3:.0f}s")
+    if apply_zp_corr:
+        all_gaia_maglim['parallax'] = zero_point_corr(all_gaia_maglim['source_id'])
+        print(f"Zero Point Parallax Correction Applied. Time elapsed {time.time() - t3:.0f}s")
 
     # 4.
+    t4 = time.time()
+    if error_inflation_type is not None:
+        all_gaia_maglim = error_inflation(all_gaia_maglim, inflation_type=error_inflation_type)
+        print(f"Error Inflation with Method {error_inflation_type} Applied. Time elapsed {time.time() - t4:.0f}s")
+
+    # 5.
     gaia_batches = batch_table(all_gaia_maglim, batch_size=batch_size)
 
     print(f"Gaia data batched into {len(gaia_batches)} separate batches\n"
           f"Starting data propagation..")
     del all_gaia_maglim
 
-    # 5.
+    # 6.
     t5 = time.time()
     gaia_login()  # Do this as late as possible to make sure it does not expire
     propagate_batches_error(gaia_batches, gaia_epoch, hipp_epoch)
     print(f"All Gaia data propagated and saved. Propagation time taken: {time.time() - t5:.0f}s")
     del gaia_batches
     
-    # 6.
+    # 7.
     gaia_batches_prop = read_tables(table_path='../../results/gaia_astrometric_batch_*', multiple=True)
     gaia_tab_prop = vstack(gaia_batches_prop)  # astropy.table function. Should arrange everything automatically
 
