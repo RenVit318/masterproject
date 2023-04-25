@@ -102,7 +102,7 @@ def zero_point_corr(gaia_ids):
                           tab['pseudocolour'][mask],
                           tab['ecl_lat'][mask],
                           tab['astrometric_params_solved'][mask])
-    tab['parallax'][mask] += zp_corr
+    tab['parallax'][mask] -= zp_corr
     return tab['parallax']
 
 
