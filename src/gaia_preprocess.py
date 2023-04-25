@@ -10,6 +10,7 @@
 
 import numpy as np
 from astropy.table import Table, vstack
+from astropy.io import fits
 from astrometry_equations import sind, cosd
 from table_functions import extract_sky_positions, extract_proper_motions, batch_table, read_tables
 from data_queries import gaia_login, query_gaia_preprocess, propagate_batches_error, delete_unlabeled_jobs, query_gaia_zpcorr
@@ -128,7 +129,10 @@ def full_preprocess(mag_lim=14, gaia_epoch=2016., hipp_epoch=1991.25, batch_size
     if not read_local:
         all_gaia_maglim = query_gaia_preprocess(mag_lim)
     else:
-        all_gaia_maglim = Table.read(data_path)  # Reading full data takes ~1h, way too long just download it.
+        if 'vot' in data_path:
+            all_gaia_maglim = Table.read(data_path)  # Reading full data takes ~1h, way too long just download it.
+        elif 'fits' in data_path:
+            all_gaia_maglim = fits.open(data_path)[1].data
     print(f"Gaia Archival Data imported. Time elapsed {time.time() - t1:.0f}s \n "
           f"Total Gaia objects: {int(len(all_gaia_maglim))}")
 
@@ -137,15 +141,17 @@ def full_preprocess(mag_lim=14, gaia_epoch=2016., hipp_epoch=1991.25, batch_size
     if apply_pm_corr:
         ra, dec = extract_sky_positions(all_gaia_maglim)
         pmra, pmde = extract_proper_motions(all_gaia_maglim)
+        g_mag = np.array(all_gaia_maglim['phot_g_mean_mag'], dtype=np.float64) # set dtype for numba
 
-        pmra_corr, pmde_corr = edr3ToICRF(pmra, pmde, ra, dec, all_gaia_maglim['phot_g_mean_mag'])
+        pmra_corr, pmde_corr = edr3ToICRF(pmra, pmde, ra, dec, g_mag)
 
         all_gaia_maglim['pmra'] = pmra_corr
-        all_gaia_maglim['pmde'] = pmde_corr
+        all_gaia_maglim['pmdec'] = pmde_corr
         print(f"Proper Motion Correction Applied. Time elapsed {time.time() - t2:.0f}s")
 
     #3.
     t3 = time.time()
+    print('Starting Zero Point Parallax Correction')
     if apply_zp_corr:
         all_gaia_maglim['parallax'] = zero_point_corr(all_gaia_maglim['source_id'])
         print(f"Zero Point Parallax Correction Applied. Time elapsed {time.time() - t3:.0f}s")
