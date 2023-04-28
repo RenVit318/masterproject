@@ -19,8 +19,8 @@ def gaia_login(user='rkievit', password="Gaia3-Hipp2"):
     Gaia.login(user=user, password=password)
 
 
-def launch_job(query):
-    job = Gaia.launch_job_async(query=query)  # , output_format=output_format)
+def launch_job(query, output_format='votable'):
+    job = Gaia.launch_job_async(query=query , output_format=output_format)
     return job
 
 
@@ -113,10 +113,11 @@ def query_gaia_preprocess(mag_lim):
     query = f""" SELECT source_id, ra, ra_error, dec, dec_error, parallax, parallax_error, pmra, pmra_error, pmdec, 
                        pmdec_error, radial_velocity, radial_velocity_error, ra_dec_corr, ra_parallax_corr, ra_pmra_corr,
                        ra_pmdec_corr, dec_parallax_corr, dec_pmra_corr, dec_pmdec_corr,	parallax_pmra_corr, 
-                       parallax_pmdec_corr, pmra_pmdec_corr, phot_g_mean_mag, bp_rp
+                       parallax_pmdec_corr, pmra_pmdec_corr, phot_g_mean_mag, bp_rp,
+                       nu_eff_used_in_astrometry, pseudocolour, ecl_lat, astrometric_params_solved
 			    FROM gaiadr3.gaia_source 
 			    WHERE phot_g_mean_mag < {mag_lim} """
-    job = launch_job(query)
+    job = launch_job(query, output_format='fits')
     return get_data(job)
 
 
@@ -132,7 +133,7 @@ def query_gaia_zpcorr(gaia_ids, table_name='source_id_zp'):
         query = f"""SELECT source_id, parallax, phot_g_mean_mag, nu_eff_used_in_astrometry, pseudocolour, ecl_lat, astrometric_params_solved
                     FROM gaiadr3.gaia_source as gaia
                     JOIN user_{username}.{table_name} USING (source_id)"""
-        job = launch_job(query)
+        job = launch_job(query, output_format='fits')
         data = get_data(job)
         Gaia.delete_user_table(table_name)            
     

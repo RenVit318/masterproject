@@ -8,12 +8,12 @@ def get_hipp_gaia_data(crossmatch_idxs, HippCat='Hipparcos_mix', GaiaCat='GaiaBa
     # Hipparcos - Gaia indexes of the cross match 
     hipp_cat = fits.open(f'{dpath}{HippCat}.fits')[1].data
     gaia_cat = fits.open(f'{dpath}{GaiaCat}.fits')[1].data
-    print(gaia_cat['source_id'])
+
     print('start gaia')
     # Make a table matching the XM order containing all propagated Gaia astrometry
     pos_gaia_table_full = copy.deepcopy(gaia_cat)
     pos_gaia_table_full = pos_gaia_table_full[crossmatch_idxs[:,2]]
-    print(pos_gaia_table_full['source_id'])
+
     print('start hipp')
     # Indexing this table is slightly more work because we do not have the table idxs stored
     pos_hipp_table_full = copy.deepcopy(hipp_cat)
@@ -82,7 +82,7 @@ def make_table():
     #fieldnames = ['G_Gpred', 'Hip_BV', 'Gaia_BpRp', 'D', 'distance', 'delta_pm_alpha', 'delta_pm_dec', 'delta_pm_tot']
     #savename = 'all_results_10as_small'
     # big table
-    fieldnames = ['method', 'G_Gpred', 'Hp_mag', 'G_mag', 'Hip_BV', 'Gaia_BpRp', 'D', 'distance', 'delta_pm_alpha', 'delta_pm_dec', 'delta_pm_tot', 'delta_plx']
+    fieldnames = ['method', 'G_Gpred', 'Hp_mag', 'G_mag', 'Hip_BV', 'Gaia_BpRp', 'D', 'distance', 'delta_pm_alpha', 'delta_pm_dec', 'delta_pm_tot', 'delta_pm_angle', 'delta_plx']
     savename = 'all_results_10as_complete_all_neighbours'
     select_funcs = False
 
@@ -161,12 +161,17 @@ def make_table():
                     unc_gaia = np.array([gaia['e_ra_prop']**2, gaia['e_de_prop']**2, gaia['ra_dec_prop']]).T
                     sub_tab[:, j] = compute_error_normalized_distance(pos_hipp, pos_gaia, unc_hipp, unc_gaia, method='none')   
                 case 'delta_pm_alpha':
-                    sub_tab[:, j] = np.abs(hipp['pm_ra'] - gaia['pmra_prop'])
+                    sub_tab[:, j] = gaia['pmra_prop'] - hipp['pm_ra']
                 case 'delta_pm_dec':
-                    sub_tab[:, j] = np.abs(hipp['pm_de'] - gaia['pmdec_prop'])
+                    sub_tab[:, j] = gaia['pmdec_prop'] - hipp['pm_de']
                 case 'delta_pm_tot':
-                    sub_tab[:, j] = np.sqrt((hipp['pm_ra'] - gaia['pmra_prop'])**2 + (hipp['pm_de'] - gaia['pmdec_prop'])**2)
-                case 'delta_plx': # Parallax
+                    sub_tab[:, j] = np.sqrt(gaia['pmra_prop']**2 + gaia['pmdec_prop']**2) - np.sqrt(hipp['pm_ra']**2 + hipp['pm_de']**2)
+                case 'delta_pm_angle':
+                    hipp_pm_len = np.sqrt(hipp['pm_ra']**2 + hipp['pm_de']**2)  
+                    gaia_pm_len = np.sqrt(gaia['pmra_prop']**2 + gaia['pmdec_prop']**2)
+                    dot_prod = hipp['pm_ra'] * gaia['pmra_prop'] + hipp['pm_de'] * gaia['pmdec_prop']
+                    sub_tab[:, j] = np.arccos(dot_prod / (hipp_pm_len * gaia_pm_len)) # takes on values between 0 and pi
+                case 'delta_plx': 
                     sub_tab[:, j] = gaia['parallax'] - hipp['plx']
                 case 'method':
                     sub_tab[:,j] = i
@@ -180,8 +185,7 @@ def make_table():
                 case 'G_mag':
                     sub_tab[:, j] = gaia['phot_g_mean_mag']
                 case 'Gaia_BpRp':
-                    sub_tab[:, j] = gaia['bp_rp']
-            print(table_data)     
+                    sub_tab[:, j] = gaia['bp_rp']  
 
     # Now turn all these tables into fits columns (can we do this in one big go from a ndarray?
     for j in range(table_data.shape[1]):

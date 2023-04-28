@@ -142,9 +142,9 @@ def make_final_cats():
     """Make the final Gaia Base Cat including everything from Brandt21 and Cantat-Gaudin+21,
     and the final Hipparcos mix catalogue, where we include all known uncertainties."""
     # 1. GaiaCat
-    full_preprocess(mag_lim=14, gaia_epoch=2016., hipp_epoch=1991.25, batch_size=int(1e5), read_local=True,
+    full_preprocess(mag_lim=14, gaia_epoch=2016., hipp_epoch=1991.25, batch_size=int(1e5), read_local=False,
                     data_path='../../data/gaia_maglim14.fits', apply_pm_corr=True, error_inflation_type='Brandt21', apply_color_correction=True,
-                    apply_zp_corr=True, return_cat=False, save_cat=True, savename='GaiaBaseCat_all')
+                    apply_zp_corr=True, return_cat=False, save_cat=True, savename='test')#'GaiaBaseCat_all')
 
     #2. Hipparcos_mix
 #    mix_hipparcos() # oops sligthly less well documented :(

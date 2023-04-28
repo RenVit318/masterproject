@@ -89,14 +89,12 @@ def error_inflation(table, inflated_errors_array=['ra_error', 'dec_error', 'para
 
     return table
 
-def zero_point_corr(gaia_ids):
+def zero_point_corr(tab):
     """Applies the zero point correction to the parallax as discussed by Lindegren+21 and implemented
     by them in the gaiadr3-zeropoint code"""
     from zero_point import zpt
     zpt.load_tables()
 
-    # query correct data
-    tab = query_gaia_zpcorr(gaia_ids)
     mask = np.isfinite(tab['parallax'] ) # only apply plx correction if we have plx information
     zp_corr = zpt.get_zpt(tab['phot_g_mean_mag'][mask],
                           tab['nu_eff_used_in_astrometry'][mask],
@@ -105,6 +103,33 @@ def zero_point_corr(gaia_ids):
                           tab['astrometric_params_solved'][mask])
     tab['parallax'][mask] -= zp_corr
     return tab['parallax']
+
+    # query correct data
+    #N = len(gaia_ids)
+
+    # 16 milion entries exceeds the 2GB limit on the archive
+    #tab1 = query_gaia_zpcorr(gaia_ids[:N//2])
+    #tab2 = query_gaia_zpcorr(gaia_ids[N//2:])
+
+    # Append 
+    #print(tab1['parallax'], tab2['parallax'])
+    #print((tab1['parallax'], tab2['parallax']).flatten())
+
+    #plx = np.append(tab1['parallax'], tab2['parallax'])
+    #g_mag = np.append(tab1['phot_g_mean_mag'], tab2['phot_g_mean_mag'])
+    #nu_eff = np.append(tab1['nu_eff_used_in_astrometry'], tab2['nu_eff_used_in_astrometry'])
+    #pseudo_col = np.append(tab1['pseudocolour'], tab2['pseudocolour'])
+    #ecl_lat = np.append(tab1['ecl_lat'], tab2['ecl_lat'])
+    #params_solved = np.append(tab1['astrometric_params_solved'], tab2['astrometric_params_solved'])
+    #print(plx)
+    #mask = np.isfinite(plx) # only apply plx correction if we have plx information
+    #zp_corr = zpt.get_zpt(g_mag[mask],
+    #                      nu_eff[mask],
+    #                      pseudo_col[mask],
+    #                      ecl_lat[mask],
+    #                      params_solved[mask])
+    #plx[mask] -= zp_corr
+    #return plx
 
 
 
@@ -153,7 +178,7 @@ def full_preprocess(mag_lim=14, gaia_epoch=2016., hipp_epoch=1991.25, batch_size
     t3 = time.time()
     print('Starting Zero Point Parallax Correction')
     if apply_zp_corr:
-        all_gaia_maglim['parallax'] = zero_point_corr(all_gaia_maglim['source_id'])
+        all_gaia_maglim['parallax'] = zero_point_corr(all_gaia_maglim)
         print(f"Zero Point Parallax Correction Applied. Time elapsed {time.time() - t3:.0f}s")
 
     # 4.
