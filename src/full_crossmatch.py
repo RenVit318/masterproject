@@ -14,11 +14,14 @@ from data_queries import read_gaia_hipp_data, gaia_login, query_extra_data
 from table_functions import extract_sky_positions, convert_to_ids
 from gaia_preprocess import full_preprocess
 from selection_functions import select_best_neighbour
+from astropy.io import fits
+import numpy as np
 
 
 def full_run_crossmatch(data_type, data_kwargs, conesearch_params,
                         save_file=False, savename='crossmatch',
-                        all_selectors=['nearest', 'likeliest_magnitude', 'likeliest_position']):
+                        all_selectors=['nearest', 'likeliest_magnitude', 'likeliest_position'],
+                        select_marrese=False):
     """Execute a complete iteration of the cross-match algorithm with either a locally stored table or a queried table from
        the Gaia Archive. The latter is not really feasible for mag_lim>~12 as processing takes up to 8 hours, store those locally
        Procedure:
@@ -32,7 +35,15 @@ def full_run_crossmatch(data_type, data_kwargs, conesearch_params,
         gaia_login()
         tab_g = full_preprocess(return_cat=True, save_cat=False, **data_kwargs)
         tab_h, _ = read_gaia_hipp_data(**data_kwargs)
-    tab_h = tab_h
+
+    # Maybe we should move this to somewhere else actually. Where?
+    if select_marrese:  # pick out only those objects belonging to the marrese_match
+        marrese_ids = fits.open(data_kwargs['marrese_path'])[1].data['hip']
+        hipp_idxs = np.zeros(len(marrese_ids), dtype=int)
+        for i, m_id in enumerate(marrese_ids):
+            hipp_idxs[i] = int(np.where(tab_h['hip'] == m_id)[0])
+        tab_h = tab_h[hipp_idxs]
+
     ra_h, de_h = extract_sky_positions(tab_h)
     ra_g, de_g = extract_sky_positions(tab_g, ra_id='ra_prop', de_id='dec_prop')
 
@@ -56,6 +67,7 @@ def full_run_crossmatch(data_type, data_kwargs, conesearch_params,
     if selection_type is not None:
         if selection_type == 'all':  # then loop over all selection methods
             for selector in all_selectors:
+
                 one_xm_tab = select_best_neighbour(tab_xm_ids, distances, selector, **data_kwargs)
 
                 if save_file:

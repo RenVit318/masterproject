@@ -124,12 +124,38 @@ def extract_cov(tab):
 
     return covar
 
+def select_marrese_objects():
+    """Select only the Marrese objects from our Hipparcos mix table"""
+    dpath = '../../data/'
+    hipp_marrese = fits.open(dpath+'marrese_hipp_table.fits')[1].data
+    hipp = fits.open(dpath+'Hipparcos_mix.fits')
+    data = hipp[1].data
+    header = hipp[1].header
+
+    marrese_ids = hipp_marrese['hip'][:10] # The Hipparcos ID's in the Marrese XM
+
+    # Find the corresponding indexes of these 'Marrese objects'
+    hipp_idxs = np.zeros(len(marrese_ids), dtype=int)
+    for i, m_id in enumerate(marrese_ids):
+        hipp_idxs[i] = int(np.where(data['hip'] == m_id)[0])
+    hipp_idxs = np.array(hipp_idxs, dtype=int)
+
+    # Select correct rows
+    new_table = data[hipp_idxs]
+    print(header)
+    header['NAXIS1'] = len(new_table[0])
+    header['NAXIS2'] = len(hipp_idxs)
+    print(new_table)
+    hdu = fits.PrimaryHDU(data=new_table, header=header)
+    hdul = fits.HDUList([hdu])
+    hdul.writeto(dpath+'Hipparcos_mix_Marrese.fits')
 
 
 def main():
     #hipp_hdul = fits.open('../../data/Hipparcos2.fits')
     #covar = extract_cov(hipp_hdul[1].data)
-    mix_hipparcos()
+    #mix_hipparcos()
+    select_marrese_objects()
 
 if __name__ == '__main__':
     main()

@@ -94,6 +94,8 @@ def select_best_neighbour(tab_xm, distances, best_match_selection, GaiaCat=None,
         select_func = nearest
         get_extra_gaia_data_type = None
         get_extra_hipp_data_type = None
+        extra_gaia_data = None
+        extra_hipp_data = None
 
     elif best_match_selection == 'brightest':
         select_func = brightest
@@ -145,9 +147,11 @@ def select_best_neighbour(tab_xm, distances, best_match_selection, GaiaCat=None,
     for i in range(len(vals)):
         if count[i] > 1:
             matches = tab_xm[idx_start[i]:idx_start[i] + count[i]]
-            extra_gaia_data = extra_gaia_data_table[idx_start[i]:idx_start[i] + count[i]]
-            extra_hipp_data = extra_hipp_data_table[idx_start[i]:idx_start[i] + count[i]]
-            best_match = select_func(matches, distances, extra_gaia_data, extra_hipp_data)
+            if extra_gaia_data is not None:
+                extra_gaia_data = extra_gaia_data_table[idx_start[i]:idx_start[i] + count[i]]
+            if extra_hipp_data is not None:
+                extra_hipp_data = extra_hipp_data_table[idx_start[i]:idx_start[i] + count[i]]
+            best_match = select_func(matches, distances[idx_start[i]:idx_start[i] + count[i]], extra_gaia_data, extra_hipp_data)
 
         else:
             best_match = tab_xm[idx_start[i]]
@@ -159,7 +163,7 @@ def select_best_neighbour(tab_xm, distances, best_match_selection, GaiaCat=None,
 def main():
     r_path = '../results/'
     xm_tab_name = 'crossmatch+PMC+EIB_1as_all_neighbours.npy'
-    best_match_selection = 'brightest'
+    best_match_selection = 'nearest'
 
     tab_xm = np.load(r_path + xm_tab_name)
     print(tab_xm)

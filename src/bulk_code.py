@@ -69,15 +69,20 @@ def make_marrese_xm_catalogues():
     """Crossmatch with only the Marrese objects to study statistics on 'good' stars"""
     dpath = '../../data/'
     data_type = 'local'
-    catalogues = ['GaiaBaseCat+EIB.fits', 'GaiaBaseCat+PMC+EIB.fits']
-    conesearch_radii_as = [1, 2, 5]
+    catalogues = ['GaiaBaseCat+PMC+EIB.fits']
+    conesearch_radii_as = [1, 2, 3, 5, 10]
+    hipp_cat = 'Hipparcos_mix.fits'
+    marrese_cat = 'marrese_hipp_table.fits'
 
     for gaia_cat in catalogues:
         for radius in conesearch_radii_as:
             # Crossmatch Parameters
             data_kwargs = {
+                'marrese_path': dpath + marrese_cat,
                 'gaia_path': dpath + gaia_cat,  # Data Path variables
-                'hipp_path': dpath + 'marrese_hipp_table.fits',
+                'hipp_path': dpath + hipp_cat,
+                'GaiaCat': gaia_cat,
+                'HippCat': hipp_cat
             }
             conesearch_params = {
                 'conesearch_radius': radius / 3600.,
@@ -87,7 +92,7 @@ def make_marrese_xm_catalogues():
             savename = make_crossmatch_savename(gaia_cat, conesearch_params['conesearch_radius'], basename='marrese_crossmatch')
             print(f"Starting Crossmatch Iteration: {savename}")
             full_run_crossmatch(data_type, data_kwargs, conesearch_params,
-                                save_file=True, savename=savename)
+                                save_file=True, savename=savename, select_marrese=True)
 
 
 def full_crossmatch_result():
@@ -152,10 +157,10 @@ def make_final_cats():
 
 
 def main():
-    #make_marrese_xm_catalogues()
+    make_marrese_xm_catalogues()
     #full_crossmatch_result()
     #select_best_matches()
-    make_final_cats()
+    #make_final_cats()
 
 
 if __name__ == '__main__':
