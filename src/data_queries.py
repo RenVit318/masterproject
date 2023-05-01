@@ -117,7 +117,7 @@ def query_gaia_preprocess(mag_lim):
                        nu_eff_used_in_astrometry, pseudocolour, ecl_lat, astrometric_params_solved
 			    FROM gaiadr3.gaia_source 
 			    WHERE phot_g_mean_mag < {mag_lim} """
-    job = launch_job(query, output_format='fits')
+    job = launch_job(query)
     return get_data(job)
 
 
