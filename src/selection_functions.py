@@ -101,6 +101,7 @@ def select_best_neighbour(tab_xm, distances, best_match_selection, GaiaCat=None,
         select_func = brightest
         get_extra_gaia_data_type = 'query'  # CHANGE. For testing purposes
         extra_gaia_data_names = ['phot_g_mean_mag']
+        get_extra_hipp_data_type = None
 
     elif best_match_selection == 'likeliest_magnitude':
         select_func = likeliest_magnitude
@@ -147,9 +148,9 @@ def select_best_neighbour(tab_xm, distances, best_match_selection, GaiaCat=None,
     for i in range(len(vals)):
         if count[i] > 1:
             matches = tab_xm[idx_start[i]:idx_start[i] + count[i]]
-            if extra_gaia_data is not None:
+            if get_extra_gaia_data_type is not None:
                 extra_gaia_data = extra_gaia_data_table[idx_start[i]:idx_start[i] + count[i]]
-            if extra_hipp_data is not None:
+            if get_extra_hipp_data_type is not None:
                 extra_hipp_data = extra_hipp_data_table[idx_start[i]:idx_start[i] + count[i]]
             best_match = select_func(matches, distances[idx_start[i]:idx_start[i] + count[i]], extra_gaia_data, extra_hipp_data)
 

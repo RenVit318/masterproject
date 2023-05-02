@@ -69,7 +69,7 @@ def make_marrese_xm_catalogues():
     """Crossmatch with only the Marrese objects to study statistics on 'good' stars"""
     dpath = '../../data/'
     data_type = 'local'
-    catalogues = ['GaiaBaseCat+PMC+EIB.fits']
+    catalogues = ['GaiaBaseCat_Final.fits']
     conesearch_radii_as = [1, 2, 3, 5, 10]
     hipp_cat = 'Hipparcos_mix.fits'
     marrese_cat = 'marrese_hipp_table.fits'
@@ -99,9 +99,9 @@ def full_crossmatch_result():
     """Crossmatch with all Hipparcos objects to make our own xm table"""
     dpath = '../../data/'
     data_type = 'local'  # local or query_gaia
-    catalogues = ['GaiaBaseCat+PMC+EIB.fits']
+    catalogues = ['GaiaBaseCat_Final.fits']
     hipp_cat = 'Hipparcos_mix.fits'
-    conesearch_radii_as = [2, 3, 5, 10]
+    conesearch_radii_as = [1,2, 3, 5, 10]
 
     for gaia_cat in catalogues:
         for radius in conesearch_radii_as:
@@ -157,8 +157,8 @@ def make_final_cats():
 
 
 def main():
-    make_marrese_xm_catalogues()
-    #full_crossmatch_result()
+    #make_marrese_xm_catalogues()
+    full_crossmatch_result()
     #select_best_matches()
     #make_final_cats()
 
