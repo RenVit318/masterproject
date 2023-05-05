@@ -74,7 +74,7 @@ def get_delta_logG(xm,
 def make_table():
     dpath = '../../data/'
     rpath = '../results/'
-    GaiaCat = 'GaiaBaseCat_all'
+    GaiaCat = 'GaiaBaseCat_Final'
     HippCat = 'Hipparcos_mix'
     
     # Fields that we want to add
@@ -83,7 +83,7 @@ def make_table():
     #savename = 'all_results_10as_small'
     # big table
     fieldnames = ['method', 'G_Gpred', 'Hp_mag', 'G_mag', 'Hip_BV', 'Gaia_BpRp', 'D', 'distance', 'delta_pm_alpha', 'delta_pm_dec', 'delta_pm_tot', 'delta_pm_angle', 'delta_plx']
-    savename = 'all_results_10as_complete_all_neighbours'
+    savename = 'all_neighbours_ml_data_final'
     select_funcs = False
 
     # GET ALL DATA #
@@ -101,7 +101,7 @@ def make_table():
         hipp_dat = [hipp_pos, hipp_mag, hipp_nea]
         gaia_dat = [gaia_pos, gaia_mag, gaia_nea]
     else:
-        xm = np.load(rpath+'final_crossmatch+PMC+EIB_10as_all_neighbours.npy')
+        xm = np.load(rpath+'final_crossmatch_10as_all_neighbours.npy')
         hipp, gaia = get_hipp_gaia_data(xm, HippCat=HippCat, GaiaCat=GaiaCat)
 
         xm_tabs = [xm]
