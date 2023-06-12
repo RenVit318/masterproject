@@ -309,6 +309,29 @@ def query_extra_data(tab_xm, extra_data_names, cat='gaia', cat_dpath='../../data
     return tab_xm, extra_data
 
 
+def get_hipp_gaia_data(crossmatch_idxs, HippCat='Hipparcos_mix', GaiaCat='GaiaBaseCat+PMC+EIB', dpath='../../data/'):
+    import copy
+    import numpy as np
+    # Hipparcos - Gaia indexes of the cross match 
+    hipp_cat = fits.open(f'{dpath}{HippCat}.fits')[1].data
+    gaia_cat = fits.open(f'{dpath}{GaiaCat}.fits')[1].data
+
+    print('start gaia')
+    # Make a table matching the XM order containing all propagated Gaia astrometry
+    #pos_gaia_table_full = copy.deepcopy(gaia_cat)
+    pos_gaia_table_full = gaia_cat[crossmatch_idxs[:,2]]
+
+    print('start hipp')
+    # Indexing this table is slightly more work because we do not have the table idxs stored
+    #pos_hipp_table_full = copy.deepcopy(hipp_cat)
+
+    hip_indexes = np.zeros(crossmatch_idxs.shape[0], dtype=np.int64)
+    for i in range(crossmatch_idxs.shape[0]):
+        hip_indexes[i] = int(np.where(hipp_cat['hip'] == crossmatch_idxs[i][0])[0][0])
+    pos_hipp_table_full = hipp_cat[hip_indexes]
+
+    return pos_hipp_table_full, pos_gaia_table_full
+
 def main():
     # gaia_login()
     # table = query_gaia_simple_conesearch(back_prop_gaia=True, mag_lim=5)

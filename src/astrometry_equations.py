@@ -162,6 +162,61 @@ def compute_error_normalized_distance(pos1, pos2, unc1, unc2, method='full', coo
         return distances/combined_unc
 
 
+def error_ellipses(mu, covmat, sigma_levels, **kwargs):
+    """
+    Given a covariance matrix for a 2D Normal distribution calculate the uncertainty-ellipses and return
+    matplotlib patches for plotting them.
+    Parameters
+    ----------
+    mu : float array
+        Mean of Normal distribution (2-vector)
+    covmat : float array
+        Covariance matrix stored as [sigma_x^2, sigma_y^2, sigma_xy]
+    sigma_levels : float or 1-D array
+        Equivalent n-sigma levels to draw
+    Returns
+    -------
+    patches : list of matplotlib.patches.Ellipse
+        List of matplotlib.patches.Ellipse objects
+    Other parameters
+    ----------------
+    **kwargs :
+        Extra arguments for matplotlib.patches.Ellipse
+    """
+    import matplotlib as mpl
+    from scipy.special import erf
+
+    sigmaLevels2D = np.array([sigma_levels]).flatten()
+    #sigmaLevels2D = -2.0 * np.log(
+    #    1.0 - erf(np.array([sigma_levels]).flatten() / np.sqrt(2.0))
+    #)
+
+    eigvalmax = 0.5 * (
+        covmat[0]
+        + covmat[1]
+        + np.sqrt((covmat[0] - covmat[1]) ** 2 + 4 * covmat[2] ** 2)
+    )
+    eigvalmin = 0.5 * (
+        covmat[0]
+        + covmat[1]
+        - np.sqrt((covmat[0] - covmat[1]) ** 2 + 4 * covmat[2] ** 2)
+    ) 
+
+    angle = np.arctan2((covmat[0] - eigvalmax), -covmat[2]) / np.pi * 180
+    errEllipses = []
+    for csqr in sigmaLevels2D:
+        errEllipses.append(
+            mpl.patches.Ellipse(
+                mu,
+                2 * np.sqrt(csqr * eigvalmax),
+                2 * np.sqrt(csqr * eigvalmin),
+                angle=angle,
+                **kwargs
+            )
+        )
+
+    return errEllipses
+
 
 
 
