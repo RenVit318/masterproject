@@ -28,8 +28,8 @@ def main():
     # Get all <117,955 unique Hipparcos stars in the xm 
     uniques, idx_start, counts = np.unique(xm[:,0], return_index=True, return_counts=True)
     
-    print(np.where(uniques>2))
-
+    print(uniques[np.where(counts>2)[0]])
+    input()
     for i in range(len(uniques)):
         fig, ax = plt.subplots(1,1,figsize=(5,5))
         
