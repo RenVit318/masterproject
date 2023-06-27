@@ -17,10 +17,10 @@ from data_queries import gaia_login, query_gaia_preprocess, propagate_batches_er
 import time
 from numba import njit
 
-@njit
+#@njit
 def numba_edr3ToICRF(pmra, pmde, ra, dec, G, table1, apply_color_correction=False):
     """
-    Input: source position , coordinates ,
+    Input: source position coordinates [deg],
     and G magnitude from Gaia DR3.
     Output: corrected proper motion.
     """
@@ -102,35 +102,8 @@ def zero_point_corr(tab):
                           tab['ecl_lat'][mask],
                           tab['astrometric_params_solved'][mask])
     tab['parallax'][mask] -= zp_corr
+    
     return tab['parallax']
-
-    # query correct data
-    #N = len(gaia_ids)
-
-    # 16 milion entries exceeds the 2GB limit on the archive
-    #tab1 = query_gaia_zpcorr(gaia_ids[:N//2])
-    #tab2 = query_gaia_zpcorr(gaia_ids[N//2:])
-
-    # Append 
-    #print(tab1['parallax'], tab2['parallax'])
-    #print((tab1['parallax'], tab2['parallax']).flatten())
-
-    #plx = np.append(tab1['parallax'], tab2['parallax'])
-    #g_mag = np.append(tab1['phot_g_mean_mag'], tab2['phot_g_mean_mag'])
-    #nu_eff = np.append(tab1['nu_eff_used_in_astrometry'], tab2['nu_eff_used_in_astrometry'])
-    #pseudo_col = np.append(tab1['pseudocolour'], tab2['pseudocolour'])
-    #ecl_lat = np.append(tab1['ecl_lat'], tab2['ecl_lat'])
-    #params_solved = np.append(tab1['astrometric_params_solved'], tab2['astrometric_params_solved'])
-    #print(plx)
-    #mask = np.isfinite(plx) # only apply plx correction if we have plx information
-    #zp_corr = zpt.get_zpt(g_mag[mask],
-    #                      nu_eff[mask],
-    #                      pseudo_col[mask],
-    #                      ecl_lat[mask],
-    #                      params_solved[mask])
-    #plx[mask] -= zp_corr
-    #return plx
-
 
 
 def full_preprocess(mag_lim=14, gaia_epoch=2016., hipp_epoch=1991.25, batch_size=None, read_local=False, data_path=None,

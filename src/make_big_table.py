@@ -22,7 +22,7 @@ def get_delta_logG(xm,
     # Gaia              
     _, logG_gaia = query_extra_data(xm, ['logg_gspphot'])
     # assume unclassified objects are MS stars/dwarfs
-    print(len( logG_gaia[np.isnan(logG_gaia)]))
+
     logG_gaia[np.isnan(logG_gaia)] = lumclass_logG_dict['V'] 
     # Hipp 
     _, tab_hipp = query_extra_data(xm, ['sptype'], cat='hipp1', return_strings=True)
@@ -44,8 +44,6 @@ def get_delta_logG(xm,
             _, _, lclass = SpecType
             logG_hipp[i] = lumclass_logG_dict[lclass]
 
-    print(logG_gaia, logG_hipp)
-    print(logG_gaia.shape, logG_hipp.shape)
     #return logG_gaia.T - logG_hipp # Transpose because logG_gaia is vertical
     return logG_gaia, logG_hipp
 
@@ -61,7 +59,7 @@ def make_table():
     #fieldnames = ['G_Gpred', 'Hip_BV', 'Gaia_BpRp', 'D', 'distance', 'delta_pm_alpha', 'delta_pm_dec', 'delta_pm_tot']
     #savename = 'all_results_10as_small'
     # big table
-    fieldnames = ['method', 'G_Gpred', 'Hp_mag', 'G_mag', 'Hip_BV', 'Gaia_BpRp', 'D', 'distance', 'delta_pm_alpha', 'delta_pm_dec', 'delta_pm_tot', 'delta_pm_angle', 'delta_plx']
+    fieldnames = ['G_Gpred', 'Hp_mag', 'G_mag', 'Hip_BV', 'Gaia_BpRp', 'D', 'distance', 'delta_pm_alpha', 'delta_pm_dec', 'delta_pm_tot', 'delta_pm_angle', 'delta_plx']
     savename = 'all_neighbours_ml_data_final'
     select_funcs = False
 
