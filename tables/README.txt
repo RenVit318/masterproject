@@ -35,9 +35,9 @@ The ultimate crossmatch result of this work. This table contains all Hipparcos -
  - ncomp: The number of Gaia objects assigned to a single Hipparcos objects based on a photometric analysis
  - comp_idx: If ncomp > 1 this indicates which Gaia source is the primary, which the secondary etc. This classification is mostly based on magnitude with the brightest source usually being the primary.
  - xm_flag: Describes the corresponding neighbour pair based on:
-    - Not a believable match
-    - Believable crossmatch based on the GMM results
-    - Secondary component based on photometry (\autoref{sec:binaries})
-    - Believable crossmatch based on high $\sigma_{\mu}/\mu$ in component 3 (\autoref{sec:green})
-    - Believable crossmatch based on forward propagation in component 7 (\autoref{sec:pink})
-    - Crossmatch determined based on individual analysis
+    0. Not a believable match
+    1. Believable crossmatch based on the GMM results
+    2. Secondary component based on photometry (\autoref{sec:binaries})
+    3. Believable crossmatch based on high $\sigma_{\mu}/\mu$ in component 3 (\autoref{sec:green})
+    4. Believable crossmatch based on forward propagation in component 7 (\autoref{sec:pink})
+    5. Crossmatch determined based on individual analysis
